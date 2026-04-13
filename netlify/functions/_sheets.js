@@ -20,8 +20,22 @@ async function getClient() {
 
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 
+/** シートが存在しなければ作成する */
+async function ensureSheet(sheetName) {
+  const client = await getClient();
+  const meta = await client.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
+  const exists = meta.data.sheets.some(s => s.properties.title === sheetName);
+  if (!exists) {
+    await client.spreadsheets.batchUpdate({
+      spreadsheetId: SPREADSHEET_ID,
+      resource: { requests: [{ addSheet: { properties: { title: sheetName } } }] },
+    });
+  }
+}
+
 /** シート全行を [{header: value, ...}] で返す */
 async function getRows(sheetName) {
+  await ensureSheet(sheetName);
   const client = await getClient();
   const res = await client.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
@@ -123,6 +137,7 @@ async function deleteRow(sheetName, id) {
 
 /** シートに特定のヘッダー行を初期化（シートが空の場合のみ） */
 async function ensureHeaders(sheetName, headers) {
+  await ensureSheet(sheetName);
   const client = await getClient();
   const res = await client.spreadsheets.values.get({
     spreadsheetId: SPREADSHEET_ID,
