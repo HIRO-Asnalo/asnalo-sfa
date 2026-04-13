@@ -154,7 +154,7 @@ async function deleteRow(sheetName, id) {
   return true;
 }
 
-/** シートに特定のヘッダー行を初期化（シートが空の場合のみ / warm instance 内でキャッシュ） */
+/** シートのヘッダー行を初期化。空なら全列書き込み、不足列があれば末尾に追加する */
 async function ensureHeaders(sheetName, headers) {
   if (_ensuredHeaders.has(sheetName)) return;   // キャッシュ済みならスキップ
   await ensureSheet(sheetName);
@@ -163,13 +163,27 @@ async function ensureHeaders(sheetName, headers) {
     spreadsheetId: SPREADSHEET_ID,
     range: `${sheetName}!1:1`,
   });
-  if (!res.data.values || res.data.values.length === 0) {
+  const existing = res.data.values?.[0] || [];
+  if (existing.length === 0) {
+    // 空シート: 全列書き込み
     await client.spreadsheets.values.update({
       spreadsheetId: SPREADSHEET_ID,
       range: `${sheetName}!A1`,
       valueInputOption: 'USER_ENTERED',
       resource: { values: [headers] },
     });
+  } else {
+    // 不足列を末尾に追加（スキーマ変更時の自動マイグレーション）
+    const missing = headers.filter(h => !existing.includes(h));
+    if (missing.length > 0) {
+      const startCol = columnToLetter(existing.length + 1);
+      await client.spreadsheets.values.update({
+        spreadsheetId: SPREADSHEET_ID,
+        range: `${sheetName}!${startCol}1`,
+        valueInputOption: 'USER_ENTERED',
+        resource: { values: [missing] },
+      });
+    }
   }
   _ensuredHeaders.add(sheetName);
 }
