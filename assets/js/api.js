@@ -20,7 +20,7 @@ const API = (() => {
     const res = await fetch(BASE + path, opts);
     if (res.status === 204) return null;
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+    if (!res.ok) throw new Error((data.error || `HTTP ${res.status}`) + (data.debug ? ` [${data.debug}]` : ''));
     return data;
   }
 

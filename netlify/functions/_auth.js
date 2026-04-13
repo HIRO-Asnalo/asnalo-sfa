@@ -37,19 +37,26 @@ function getUser(event) {
  * 未認証の場合は 401 を返す
  */
 function requireAuth(event) {
-  const user = getUser(event);
-  if (!user) {
-    return {
-      error: true,
-      statusCode: 401,
-      body: JSON.stringify({ error: '認証が必要です' }),
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    };
+  const authHeader = event.headers.authorization || event.headers.Authorization;
+  if (!authHeader) {
+    console.error('[auth] no Authorization header');
+    return { error: true, statusCode: 401, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: '認証が必要です', debug: 'no_header' }) };
   }
-  return { error: false, user };
+  if (!authHeader.startsWith('Bearer ')) {
+    console.error('[auth] bad Bearer format');
+    return { error: true, statusCode: 401, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: '認証が必要です', debug: 'bad_format' }) };
+  }
+  const token = authHeader.slice(7);
+  const payload = decodeJWT(token);
+  if (!payload) {
+    console.error('[auth] JWT decode failed, token prefix:', token.slice(0, 20));
+    return { error: true, statusCode: 401, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: '認証が必要です', debug: 'decode_failed' }) };
+  }
+  if (payload.exp && payload.exp < Date.now() / 1000) {
+    console.error('[auth] token expired, exp:', payload.exp, 'now:', Math.floor(Date.now()/1000));
+    return { error: true, statusCode: 401, headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ error: '認証が必要です', debug: 'expired' }) };
+  }
+  return { error: false, user: payload };
 }
 
 module.exports = { getUser, requireAuth };
