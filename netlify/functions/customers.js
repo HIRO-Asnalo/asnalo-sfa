@@ -1,32 +1,16 @@
 /**
- * 顧客マスタ CRUD API
- * GET    /api/customers           → 一覧
- * GET    /api/customers?id=xxx    → 1件取得
- * POST   /api/customers           → 新規作成
- * PUT    /api/customers           → 更新
- * DELETE /api/customers?id=xxx    → 削除
+ * 顧客マスタ（契約後CRM）CRUD API
+ * GET    /api/customers        → 一覧
+ * GET    /api/customers?id=xxx → 1件取得
+ * POST   /api/customers        → 新規作成
+ * PUT    /api/customers        → 更新
+ * DELETE /api/customers?id=xxx → 削除
  */
 
-const { v4: uuidv4 } = require('uuid');
-const { getRows, getRow, appendRow, updateRow, deleteRow, ensureHeaders, response } = require('./_sheets');
+const { getRows, getRow, insertRow, updateRow, deleteRow, response } = require('./_db');
 const { requireAuth } = require('./_auth');
 
-const SHEET = '顧客マスタ';
-const HEADERS = [
-  // 基本情報
-  'id', 'company_name', 'industry', 'address', 'phone', 'website', 'employee_count',
-  // セールス情報
-  'contact_name', 'contact_email', 'contact_phone',
-  'contract_date', 'contract_amount', 'contract_type',
-  'upsell_status', 'upsell_notes', 'ma_subscribed',
-  // CS情報
-  'cs_rep', 'cs_status', 'onboarding_status',
-  'onboarding_start_date', 'onboarding_end_date',
-  'satisfaction_score', 'last_contact_date',
-  'renewal_flag', 'churn_risk', 'support_notes',
-  // メタ
-  'tags', 'notes', 'created_at', 'updated_at',
-];
+const TABLE = 'customers';
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return response(204, {});
@@ -35,46 +19,42 @@ exports.handler = async (event) => {
   if (auth.error) return auth;
 
   try {
-    await ensureHeaders(SHEET, HEADERS);
-
     switch (event.httpMethod) {
       case 'GET': {
         const id = event.queryStringParameters?.id;
         if (id) {
-          const row = await getRow(SHEET, id);
+          const row = await getRow(TABLE, id);
           if (!row) return response(404, { error: '顧客が見つかりません' });
           return response(200, row);
         }
-        const rows = await getRows(SHEET);
-        return response(200, rows);
+        return response(200, await getRows(TABLE));
       }
 
       case 'POST': {
         const body = JSON.parse(event.body || '{}');
         if (!body.company_name) return response(400, { error: '顧客名は必須です' });
         const now = new Date().toISOString();
-        const newCustomer = {
-          id: uuidv4(),
+        const result = await insertRow(TABLE, {
           ma_subscribed: 'false',
           ...body,
           created_at: now,
           updated_at: now,
-        };
-        await appendRow(SHEET, newCustomer);
-        return response(201, newCustomer);
+        });
+        return response(201, result);
       }
 
       case 'PUT': {
         const body = JSON.parse(event.body || '{}');
         if (!body.id) return response(400, { error: 'id が必要です' });
-        await updateRow(SHEET, body.id, { ...body, updated_at: new Date().toISOString() });
+        const { id, ...rest } = body;
+        await updateRow(TABLE, id, { ...rest, updated_at: new Date().toISOString() });
         return response(200, { success: true });
       }
 
       case 'DELETE': {
         const id = event.queryStringParameters?.id;
         if (!id) return response(400, { error: 'id が必要です' });
-        await deleteRow(SHEET, id);
+        await deleteRow(TABLE, id);
         return response(200, { success: true });
       }
 
