@@ -8,188 +8,163 @@
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    /* ダッシュボード専用スタイル */
-    .db-hero {
-      background: linear-gradient(135deg, var(--primary) 0%, #2a3f72 60%, #1e2d55 100%);
-      color: #fff;
-      padding: 24px 28px 20px;
+    /* ===== ダッシュボード専用 ===== */
+    .db-header {
+      background: #fff;
+      border-bottom: 1px solid var(--border);
+      padding: 14px 24px;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
-    .db-hero-title { font-size: 20px; font-weight: 800; letter-spacing: .02em; }
-    .db-hero-sub { font-size: 12px; color: rgba(255,255,255,.6); margin-top: 2px; }
-    .db-hero-date { font-size: 12px; color: rgba(255,255,255,.5); text-align: right; }
+    .db-header-title { font-size: 17px; font-weight: 800; color: var(--primary); }
+    .db-header-sub   { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .db-header-date  { font-size: 11px; color: var(--text-muted); }
 
-    /* KPIバー */
-    .kpi-bar {
+    /* KPI カード行 */
+    .kpi-row {
       display: grid;
       grid-template-columns: repeat(5, 1fr);
-      gap: 0;
+      gap: 14px;
+      padding: 18px 24px;
+      background: var(--bg);
+    }
+    .kpi-card {
       background: #fff;
-      border-bottom: 2px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      border-top: 3px solid var(--accent);
+      box-shadow: 0 1px 4px rgba(0,0,0,.06);
     }
-    .kpi-item {
-      padding: 18px 20px;
-      border-right: 1px solid var(--border);
-      position: relative;
-    }
-    .kpi-item:last-child { border-right: none; }
-    .kpi-item::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
-      background: var(--accent);
-    }
-    .kpi-item.blue::before  { background: #0ea5e9; }
-    .kpi-item.green::before { background: #22c55e; }
-    .kpi-item.purple::before { background: #8b5cf6; }
-    .kpi-item.red::before   { background: #ef4444; }
-    .kpi-label { font-size: 11px; color: var(--text-muted); font-weight: 600; margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
-    .kpi-value { font-size: 32px; font-weight: 800; color: var(--text); line-height: 1; }
-    .kpi-unit  { font-size: 13px; font-weight: 400; color: var(--text-muted); margin-left: 3px; }
-    .kpi-sub   { font-size: 11px; color: var(--text-muted); margin-top: 5px; }
+    .kpi-card.blue   { border-color: #0ea5e9; }
+    .kpi-card.green  { border-color: #22c55e; }
+    .kpi-card.purple { border-color: #8b5cf6; }
+    .kpi-card.red    { border-color: #ef4444; }
+    .kpi-label { font-size: 11px; color: var(--text-muted); font-weight: 600; margin-bottom: 8px; }
+    .kpi-val   { font-size: 36px; font-weight: 800; color: var(--text); line-height: 1; }
+    .kpi-unit  { font-size: 14px; font-weight: 500; color: var(--text-muted); margin-left: 2px; }
+    .kpi-sub   { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+    /* ボディグリッド */
+    .db-body { padding: 0 24px 24px; }
+
+    .db-row { display: grid; gap: 14px; margin-bottom: 14px; }
+    .db-row.col3 { grid-template-columns: 1fr 1fr 1fr; }
+    .db-row.col2-1 { grid-template-columns: 2fr 1fr; }
 
     /* セクションタイトル */
-    .section-title {
-      font-size: 13px;
+    .s-title {
+      font-size: 12px;
       font-weight: 800;
       color: var(--primary);
+      letter-spacing: .05em;
       text-transform: uppercase;
-      letter-spacing: .06em;
       margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .section-title::before {
-      content: '';
-      width: 4px; height: 16px;
-      background: var(--accent);
-      border-radius: 2px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--accent);
       display: inline-block;
     }
 
     /* パイプライン */
-    .pipeline-row {
+    .pl-row {
       display: flex;
       align-items: center;
       gap: 10px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
+      padding: 8px 0;
+      border-bottom: 1px solid #f1f5f9;
     }
-    .pipeline-row:last-child { border-bottom: none; }
-    .pipeline-phase {
+    .pl-row:last-child { border-bottom: none; }
+    .pl-label {
+      width: 90px;
       font-size: 12px;
       font-weight: 700;
-      width: 100px;
       flex-shrink: 0;
     }
-    .pipeline-bar-wrap {
+    .pl-bar-bg {
       flex: 1;
-      height: 10px;
+      height: 8px;
       background: var(--bg);
-      border-radius: 5px;
+      border-radius: 4px;
       overflow: hidden;
     }
-    .pipeline-bar {
-      height: 100%;
-      border-radius: 5px;
-      background: var(--accent);
-      transition: width .5s ease;
-    }
-    .pipeline-count {
-      font-size: 13px;
-      font-weight: 700;
-      color: var(--text);
-      width: 28px;
-      text-align: right;
-      flex-shrink: 0;
-    }
+    .pl-bar { height: 100%; border-radius: 4px; }
+    .pl-count { font-size: 13px; font-weight: 700; width: 24px; text-align: right; flex-shrink: 0; }
 
-    /* 担当者テーブル */
+    /* 担当者 */
     .member-row {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 9px 0;
-      border-bottom: 1px solid var(--border);
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid #f1f5f9;
     }
     .member-row:last-child { border-bottom: none; }
-    .member-avatar {
-      width: 32px; height: 32px;
+    .member-av {
+      width: 30px; height: 30px;
       border-radius: 50%;
       background: var(--primary);
       color: #fff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 700;
-      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; flex-shrink: 0;
     }
-    .member-name { font-size: 13px; font-weight: 600; flex: 1; }
-    .member-stats { display: flex; gap: 16px; }
-    .member-stat { text-align: center; }
-    .member-stat-val { font-size: 15px; font-weight: 700; color: var(--primary); }
-    .member-stat-label { font-size: 10px; color: var(--text-muted); }
+    .member-name { flex: 1; font-size: 13px; font-weight: 600; }
+    .member-badge {
+      font-size: 12px; font-weight: 700;
+      background: var(--bg);
+      border-radius: 6px;
+      padding: 2px 10px;
+      color: var(--primary);
+    }
 
-    /* 今週のアクション */
-    .action-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-    }
-    .action-item:last-child { border-bottom: none; }
-    .action-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      background: var(--accent);
-      margin-top: 5px;
-      flex-shrink: 0;
-    }
-    .action-dot.green  { background: var(--success); }
-    .action-dot.red    { background: var(--danger); }
-    .action-dot.purple { background: #8b5cf6; }
-    .action-content { flex: 1; }
-    .action-title { font-size: 13px; font-weight: 600; }
-    .action-meta  { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
-    .action-date  { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
-
-    /* 直近案件リスト */
+    /* 案件リスト */
     .deal-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border);
-      text-decoration: none;
-      color: inherit;
-      transition: background .1s;
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 0; border-bottom: 1px solid #f1f5f9;
+      text-decoration: none; color: inherit;
     }
     .deal-row:last-child { border-bottom: none; }
-    .deal-row:hover { background: var(--bg); margin: 0 -14px; padding-left: 14px; padding-right: 14px; border-radius: 6px; }
+    .deal-row:hover .deal-name { color: var(--accent); }
     .deal-info { flex: 1; min-width: 0; }
-    .deal-name { font-size: 13px; font-weight: 700; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .deal-customer { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
-    .deal-date { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+    .deal-name {
+      font-size: 13px; font-weight: 700;
+      color: var(--primary);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      transition: color .15s;
+    }
+    .deal-sub { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .deal-date { font-size: 11px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
 
-    /* 3カラムグリッド */
-    .dash-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
+    /* 活動 */
+    .act-row {
+      display: flex; gap: 10px;
+      padding: 8px 0; border-bottom: 1px solid #f1f5f9;
     }
-    .dash-grid-2 {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 16px;
-      margin-bottom: 16px;
+    .act-row:last-child { border-bottom: none; }
+    .act-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--accent); margin-top: 5px; flex-shrink: 0;
     }
+    .act-dot.blue   { background: #0ea5e9; }
+    .act-dot.green  { background: #22c55e; }
+    .act-dot.purple { background: #8b5cf6; }
+    .act-txt  { font-size: 12.5px; font-weight: 600; flex: 1; }
+    .act-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .act-date { font-size: 11px; color: var(--text-muted); white-space: nowrap; }
+
+    /* チャート凡例 */
+    .chart-legend {
+      display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px;
+    }
+    .chart-legend-item {
+      display: flex; align-items: center; gap: 4px;
+      font-size: 11px; color: var(--text-muted);
+    }
+    .chart-legend-dot {
+      width: 9px; height: 9px; border-radius: 2px;
+    }
+
+    /* 空状態 */
+    .empty { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); }
   </style>
 </head>
 <body class="app-layout">
@@ -227,92 +202,84 @@
   </aside>
 
   <!-- Main -->
-  <main class="main-content">
+  <main class="main-content" style="display:block;">
 
-    <!-- Hero Header -->
-    <div class="db-hero">
+    <!-- ヘッダー -->
+    <div class="db-header">
       <div>
-        <div class="db-hero-title">営業ダッシュボード</div>
-        <div class="db-hero-sub">株式会社アスナロ | フルサポ採用 パイプライン管理</div>
+        <div class="db-header-title">営業ダッシュボード</div>
+        <div class="db-header-sub">株式会社アスナロ ｜ フルサポ採用 パイプライン管理</div>
       </div>
-      <div class="db-hero-date" id="lastUpdated"></div>
+      <div class="db-header-date" id="lastUpdated">—</div>
     </div>
 
-    <!-- KPI バー -->
-    <div class="kpi-bar" id="kpiBar">
-      <div class="kpi-item">
-        <div class="kpi-label">稼働案件</div>
-        <div class="kpi-value" id="stat-active">—<span class="kpi-unit">件</span></div>
+    <!-- KPI カード -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-label">稼働案件数</div>
+        <div class="kpi-val" id="kpi-active">0<span class="kpi-unit">件</span></div>
         <div class="kpi-sub">受注・失注除く</div>
       </div>
-      <div class="kpi-item blue">
+      <div class="kpi-card blue">
         <div class="kpi-label">総顧客数</div>
-        <div class="kpi-value" id="stat-customers">—<span class="kpi-unit">社</span></div>
+        <div class="kpi-val" id="kpi-customers">0<span class="kpi-unit">社</span></div>
         <div class="kpi-sub">登録済み</div>
       </div>
-      <div class="kpi-item green">
-        <div class="kpi-label">受注率</div>
-        <div class="kpi-value" id="stat-winrate">—<span class="kpi-unit">%</span></div>
-        <div class="kpi-sub">累計</div>
+      <div class="kpi-card green">
+        <div class="kpi-label">受注率（累計）</div>
+        <div class="kpi-val" id="kpi-winrate">0<span class="kpi-unit">%</span></div>
+        <div class="kpi-sub">受注 ÷ クローズ</div>
       </div>
-      <div class="kpi-item purple">
-        <div class="kpi-label">今月受注予定</div>
-        <div class="kpi-value" id="stat-closing">—<span class="kpi-unit">件</span></div>
+      <div class="kpi-card purple">
+        <div class="kpi-label">今月 受注予定</div>
+        <div class="kpi-val" id="kpi-closing">0<span class="kpi-unit">件</span></div>
         <div class="kpi-sub">クロージング含む</div>
       </div>
-      <div class="kpi-item red">
-        <div class="kpi-label">今週の活動</div>
-        <div class="kpi-value" id="stat-activities">—<span class="kpi-unit">件</span></div>
+      <div class="kpi-card red">
+        <div class="kpi-label">今週の活動数</div>
+        <div class="kpi-val" id="kpi-activities">0<span class="kpi-unit">件</span></div>
         <div class="kpi-sub">コンタクト数</div>
       </div>
     </div>
 
-    <div class="page-body">
+    <!-- コンテンツ -->
+    <div class="db-body">
 
-      <!-- 1段目: パイプライン + チャート + 担当者 -->
-      <div class="dash-grid">
+      <!-- 1段目: パイプライン / ドーナツ / 担当者 -->
+      <div class="db-row col3">
 
-        <!-- フェーズ別パイプライン -->
         <div class="card">
-          <div class="section-title">フェーズ別パイプライン</div>
-          <div id="pipelineList">
-            <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:12px;">読み込み中...</div>
-          </div>
+          <div class="s-title">フェーズ別パイプライン</div>
+          <div id="pipelineList"><div class="empty">読み込み中...</div></div>
         </div>
 
-        <!-- フェーズ別ドーナツ -->
         <div class="card">
-          <div class="section-title">案件構成比</div>
-          <canvas id="phaseChart" height="180"></canvas>
-          <div id="chartLegend" style="margin-top:12px;display:flex;flex-wrap:wrap;gap:6px;"></div>
+          <div class="s-title">案件構成比</div>
+          <canvas id="phaseChart" height="190"></canvas>
+          <div class="chart-legend" id="chartLegend"></div>
         </div>
 
-        <!-- 担当者別実績 -->
         <div class="card">
-          <div class="section-title">担当者別 稼働案件</div>
-          <div id="memberList">
-            <div style="text-align:center;padding:24px;color:var(--text-muted);font-size:12px;">読み込み中...</div>
-          </div>
+          <div class="s-title">担当者別 稼働案件</div>
+          <div id="memberList"><div class="empty">読み込み中...</div></div>
         </div>
 
       </div>
 
-      <!-- 2段目: 直近案件 + 活動 -->
-      <div class="dash-grid-2">
+      <!-- 2段目: 直近案件 / 活動 -->
+      <div class="db-row col2-1">
 
-        <!-- 直近の更新案件 -->
         <div class="card">
-          <div class="section-title" style="justify-content:space-between;display:flex;align-items:center;">
-            <span style="display:flex;align-items:center;gap:8px;"><span style="content:'';width:4px;height:16px;background:var(--accent);border-radius:2px;display:inline-block;"></span>直近の更新案件</span>
-            <a href="/deals/index.html" class="btn btn-ghost btn-sm">一覧へ →</a>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div class="s-title" style="margin-bottom:0;">直近の更新案件</div>
+            <a href="/deals/index.html" class="btn btn-ghost btn-sm">一覧 →</a>
           </div>
-          <div id="recentDeals"></div>
+          <div id="recentDeals"><div class="empty">読み込み中...</div></div>
         </div>
 
-        <!-- 直近の活動 -->
         <div class="card">
-          <div class="section-title">直近の活動</div>
-          <div id="recentActivities"></div>
+          <div class="s-title">直近の活動</div>
+          <div id="recentActivities"><div class="empty">読み込み中...</div></div>
         </div>
 
       </div>
@@ -325,150 +292,96 @@
   <script src="/assets/js/utils.js"></script>
   <script>
     const PHASES = ['認知商談','ヒアリング','提案','クロージング','受注','失注'];
-    const PHASE_COLORS = {
-      '認知商談':   '#94a3b8',
-      'ヒアリング': '#0ea5e9',
-      '提案':       '#f59e0b',
-      'クロージング': '#F59E12',
-      '受注':       '#22c55e',
-      '失注':       '#ef4444',
-    };
-    let phaseChart;
+    const COLORS = { '認知商談':'#94a3b8','ヒアリング':'#0ea5e9','提案':'#f59e0b','クロージング':'#F59E12','受注':'#22c55e','失注':'#ef4444' };
+    let chart;
 
     initPage(async () => {
       try {
-        const data = await API.dashboard.stats();
-        renderKPIs(data.summary);
-        renderPipeline(data.phase_count);
-        renderChart(data.phase_count);
-        renderMembers(data.recent_deals);
-        renderRecentDeals(data.recent_deals);
-        renderActivities(data.recent_activities);
-        document.getElementById('lastUpdated').innerHTML =
-          `更新日時<br>${fmtDatetime(new Date().toISOString())}`;
+        const d = await API.dashboard.stats();
+        // KPI
+        document.getElementById('kpi-active').innerHTML      = `${d.summary.active_deals}<span class="kpi-unit">件</span>`;
+        document.getElementById('kpi-customers').innerHTML   = `${d.summary.total_customers}<span class="kpi-unit">社</span>`;
+        document.getElementById('kpi-winrate').innerHTML     = `${d.summary.win_rate}<span class="kpi-unit">%</span>`;
+        document.getElementById('kpi-closing').innerHTML     = `${d.summary.closing_this_month}<span class="kpi-unit">件</span>`;
+        document.getElementById('kpi-activities').innerHTML  = `${d.summary.week_activities}<span class="kpi-unit">件</span>`;
+        document.getElementById('lastUpdated').textContent   = '更新: ' + fmtDatetime(new Date().toISOString());
+
+        renderPipeline(d.phase_count);
+        renderChart(d.phase_count);
+        renderMembers(d.recent_deals);
+        renderDeals(d.recent_deals);
+        renderActivities(d.recent_activities);
       } catch(e) {
         Toast.error('データ取得エラー: ' + e.message);
       }
     });
 
-    function renderKPIs(s) {
-      document.getElementById('stat-active').innerHTML     = `${s.active_deals}<span class="kpi-unit">件</span>`;
-      document.getElementById('stat-customers').innerHTML  = `${s.total_customers}<span class="kpi-unit">社</span>`;
-      document.getElementById('stat-winrate').innerHTML    = `${s.win_rate}<span class="kpi-unit">%</span>`;
-      document.getElementById('stat-closing').innerHTML    = `${s.closing_this_month}<span class="kpi-unit">件</span>`;
-      document.getElementById('stat-activities').innerHTML = `${s.week_activities}<span class="kpi-unit">件</span>`;
-    }
-
-    function renderPipeline(phaseCount) {
-      const el = document.getElementById('pipelineList');
-      const total = Object.values(phaseCount).reduce((a,b) => a+b, 0) || 1;
-      el.innerHTML = PHASES.map(phase => {
-        const count = phaseCount[phase] || 0;
-        const pct = Math.round((count / total) * 100);
-        const color = PHASE_COLORS[phase] || '#94a3b8';
-        return `
-          <div class="pipeline-row">
-            <div class="pipeline-phase" style="color:${color};">${phase}</div>
-            <div class="pipeline-bar-wrap">
-              <div class="pipeline-bar" style="width:${pct}%;background:${color};"></div>
-            </div>
-            <div class="pipeline-count">${count}</div>
-          </div>
-        `;
+    function renderPipeline(pc) {
+      const total = Object.values(pc).reduce((a,b)=>a+b,0)||1;
+      document.getElementById('pipelineList').innerHTML = PHASES.map(p => {
+        const n = pc[p]||0, pct = Math.round(n/total*100), c = COLORS[p];
+        return `<div class="pl-row">
+          <div class="pl-label" style="color:${c}">${p}</div>
+          <div class="pl-bar-bg"><div class="pl-bar" style="width:${pct}%;background:${c};"></div></div>
+          <div class="pl-count">${n}</div>
+        </div>`;
       }).join('');
     }
 
-    function renderChart(phaseCount) {
-      const labels = PHASES.filter(p => (phaseCount[p] || 0) > 0);
-      const data   = labels.map(p => phaseCount[p] || 0);
-      const colors = labels.map(p => PHASE_COLORS[p] || '#94a3b8');
-      const ctx = document.getElementById('phaseChart');
-      if (phaseChart) phaseChart.destroy();
-      phaseChart = new Chart(ctx, {
+    function renderChart(pc) {
+      const labels = PHASES.filter(p=>(pc[p]||0)>0);
+      const data   = labels.map(p=>pc[p]||0);
+      const colors = labels.map(p=>COLORS[p]);
+      if (chart) chart.destroy();
+      chart = new Chart(document.getElementById('phaseChart'), {
         type: 'doughnut',
-        data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor: '#fff' }] },
-        options: {
-          plugins: { legend: { display: false } },
-          cutout: '68%',
-        },
+        data: { labels, datasets: [{ data, backgroundColor: colors, borderWidth: 2, borderColor:'#fff' }] },
+        options: { plugins:{ legend:{ display:false } }, cutout:'65%' },
       });
-      // カスタム凡例
-      document.getElementById('chartLegend').innerHTML = labels.map((l, i) => `
-        <div style="display:flex;align-items:center;gap:4px;font-size:11px;">
-          <span style="width:10px;height:10px;border-radius:2px;background:${colors[i]};display:inline-block;"></span>
-          ${l} ${data[i]}件
-        </div>
-      `).join('');
+      document.getElementById('chartLegend').innerHTML = labels.map((l,i)=>`
+        <div class="chart-legend-item">
+          <div class="chart-legend-dot" style="background:${colors[i]};"></div>
+          ${l} <strong>${data[i]}</strong>件
+        </div>`).join('');
     }
 
     function renderMembers(deals) {
-      const el = document.getElementById('memberList');
-      if (!deals?.length) {
-        el.innerHTML = '<div style="text-align:center;padding:16px;font-size:12px;color:var(--text-muted);">データなし</div>';
-        return;
-      }
-      // 担当者別集計
-      const map = {};
-      deals.forEach(d => {
-        const u = d.assigned_user || '未設定';
-        if (!map[u]) map[u] = { total: 0, active: 0 };
-        map[u].total++;
-        if (!['受注','失注'].includes(d.phase)) map[u].active++;
-      });
-      el.innerHTML = Object.entries(map).slice(0, 5).map(([name, s]) => `
+      if (!deals?.length) { document.getElementById('memberList').innerHTML='<div class="empty">データなし</div>'; return; }
+      const map={};
+      deals.forEach(d=>{ const u=d.assigned_user||'未設定'; if(!map[u])map[u]=0; if(!['受注','失注'].includes(d.phase))map[u]++; });
+      document.getElementById('memberList').innerHTML = Object.entries(map).slice(0,6).map(([n,c])=>`
         <div class="member-row">
-          <div class="member-avatar">${name.slice(0,1)}</div>
-          <div class="member-name">${name}</div>
-          <div class="member-stats">
-            <div class="member-stat">
-              <div class="member-stat-val">${s.active}</div>
-              <div class="member-stat-label">稼働</div>
-            </div>
-            <div class="member-stat">
-              <div class="member-stat-val">${s.total}</div>
-              <div class="member-stat-label">累計</div>
-            </div>
-          </div>
-        </div>
-      `).join('');
+          <div class="member-av">${n.slice(0,1)}</div>
+          <div class="member-name">${n}</div>
+          <div class="member-badge">${c}件</div>
+        </div>`).join('');
     }
 
-    function renderRecentDeals(deals) {
-      const el = document.getElementById('recentDeals');
-      if (!deals?.length) {
-        el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:12px;">案件がありません</div>';
-        return;
-      }
-      el.innerHTML = deals.map(d => `
+    function renderDeals(deals) {
+      if (!deals?.length) { document.getElementById('recentDeals').innerHTML='<div class="empty">案件なし</div>'; return; }
+      document.getElementById('recentDeals').innerHTML = deals.map(d=>`
         <a href="/deals/detail.html?id=${d.id}" class="deal-row">
           <div class="deal-info">
-            <div class="deal-name">${d.deal_name || '（無題）'}</div>
-            <div class="deal-customer">${d.assigned_user || '—'}</div>
+            <div class="deal-name">${d.deal_name||'（無題）'}</div>
+            <div class="deal-sub">${d.assigned_user||'—'}</div>
           </div>
           ${phaseBadge(d.phase)}
           <div class="deal-date">${fmtDate(d.updated_at)}</div>
-        </a>
-      `).join('');
+        </a>`).join('');
     }
 
-    function renderActivities(activities) {
-      const el = document.getElementById('recentActivities');
-      if (!activities?.length) {
-        el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:12px;">活動なし</div>';
-        return;
-      }
-      const dotColor = { '電話':'', '訪問':'green', 'メール':'purple', '商談':'red', 'メモ':'' };
-      const typeIcon = { '電話':'📞','訪問':'🏢','メール':'📧','商談':'💼','メモ':'📝' };
-      el.innerHTML = activities.slice(0, 8).map(a => `
-        <div class="action-item">
-          <div class="action-dot ${dotColor[a.type]||''}"></div>
-          <div class="action-content">
-            <div class="action-title">${typeIcon[a.type]||'📝'} ${a.content?.slice(0,40) || '—'}${a.content?.length > 40 ? '...' : ''}</div>
-            <div class="action-meta">${a.type} · ${a.user_name || ''}</div>
+    function renderActivities(acts) {
+      if (!acts?.length) { document.getElementById('recentActivities').innerHTML='<div class="empty">活動なし</div>'; return; }
+      const dc = {'電話':'','訪問':'green','メール':'blue','商談':'purple','メモ':''};
+      const ic = {'電話':'📞','訪問':'🏢','メール':'📧','商談':'💼','メモ':'📝'};
+      document.getElementById('recentActivities').innerHTML = acts.slice(0,8).map(a=>`
+        <div class="act-row">
+          <div class="act-dot ${dc[a.type]||''}"></div>
+          <div style="flex:1;min-width:0;">
+            <div class="act-txt">${ic[a.type]||'📝'} ${(a.content||'').slice(0,35)}${a.content?.length>35?'...':''}</div>
+            <div class="act-meta">${a.type} · ${a.user_name||''} · ${fmtDate(a.activity_date)}</div>
           </div>
-          <div class="action-date">${fmtDate(a.activity_date)}</div>
-        </div>
-      `).join('');
+        </div>`).join('');
     }
   </script>
 </body>
