@@ -2,18 +2,32 @@
  * Slack 通知ヘルパー
  */
 
-async function notify(payload) {
+const https = require('https');
+
+function postToSlack(payload) {
   const url = process.env.SLACK_WEBHOOK_URL;
-  if (!url) return;
-  try {
-    await fetch(url, {
+  if (!url) { console.error('[slack] SLACK_WEBHOOK_URL not set'); return Promise.resolve(); }
+
+  return new Promise((resolve) => {
+    const body = JSON.stringify(payload);
+    const urlObj = new URL(url);
+    const req = https.request({
+      hostname: urlObj.hostname,
+      path: urlObj.pathname,
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) },
+    }, (res) => {
+      let data = '';
+      res.on('data', (d) => data += d);
+      res.on('end', () => {
+        if (res.statusCode !== 200) console.error('[slack] error:', res.statusCode, data);
+        resolve();
+      });
     });
-  } catch (e) {
-    console.error('Slack notify error:', e.message);
-  }
+    req.on('error', (e) => { console.error('[slack] request error:', e.message); resolve(); });
+    req.write(body);
+    req.end();
+  });
 }
 
 function phaseEmoji(phase) {
@@ -25,13 +39,10 @@ function phaseEmoji(phase) {
 }
 
 /** 新規案件作成通知 */
-async function notifyDealCreated(deal, userName) {
-  await notify({
+function notifyDealCreated(deal, userName) {
+  return postToSlack({
     blocks: [
-      {
-        type: 'header',
-        text: { type: 'plain_text', text: '🆕 新規案件が登録されました', emoji: true },
-      },
+      { type: 'header', text: { type: 'plain_text', text: '🆕 新規案件が登録されました', emoji: true } },
       {
         type: 'section',
         fields: [
@@ -46,19 +57,16 @@ async function notifyDealCreated(deal, userName) {
 }
 
 /** フェーズ変更通知 */
-async function notifyPhaseChanged(deal, oldPhase, userName) {
+function notifyPhaseChanged(deal, oldPhase, userName) {
   const isWon  = deal.phase === '受注';
   const isLost = deal.phase === '失注';
   const header = isWon  ? '🎉 受注確定！おめでとうございます！'
                : isLost ? '😞 失注となりました'
                : `${phaseEmoji(deal.phase)} フェーズが変更されました`;
 
-  await notify({
+  return postToSlack({
     blocks: [
-      {
-        type: 'header',
-        text: { type: 'plain_text', text: header, emoji: true },
-      },
+      { type: 'header', text: { type: 'plain_text', text: header, emoji: true } },
       {
         type: 'section',
         fields: [
