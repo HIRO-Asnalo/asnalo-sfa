@@ -20,17 +20,36 @@ async function getClient() {
 
 const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 
+/**
+ * シート名一覧キャッシュ（Warm起動間で再利用 / 並列呼び出しも1回だけ取得）
+ * spreadsheets.get は高コストなので最小化する
+ */
+let _sheetNamesPromise = null;
+
+async function getSheetNames() {
+  if (!_sheetNamesPromise) {
+    _sheetNamesPromise = (async () => {
+      const client = await getClient();
+      const meta = await client.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
+      return new Set(meta.data.sheets.map(s => s.properties.title));
+    })();
+  }
+  return _sheetNamesPromise;
+}
+
+/** ensureHeaders 済みシートのキャッシュ（同一 warm instance 内で重複チェック不要） */
+const _ensuredHeaders = new Set();
+
 /** シートが存在しなければ作成する */
 async function ensureSheet(sheetName) {
+  const names = await getSheetNames();
+  if (names.has(sheetName)) return;
   const client = await getClient();
-  const meta = await client.spreadsheets.get({ spreadsheetId: SPREADSHEET_ID });
-  const exists = meta.data.sheets.some(s => s.properties.title === sheetName);
-  if (!exists) {
-    await client.spreadsheets.batchUpdate({
-      spreadsheetId: SPREADSHEET_ID,
-      resource: { requests: [{ addSheet: { properties: { title: sheetName } } }] },
-    });
-  }
+  await client.spreadsheets.batchUpdate({
+    spreadsheetId: SPREADSHEET_ID,
+    resource: { requests: [{ addSheet: { properties: { title: sheetName } } }] },
+  });
+  names.add(sheetName);
 }
 
 /** シート全行を [{header: value, ...}] で返す */
@@ -135,8 +154,9 @@ async function deleteRow(sheetName, id) {
   return true;
 }
 
-/** シートに特定のヘッダー行を初期化（シートが空の場合のみ） */
+/** シートに特定のヘッダー行を初期化（シートが空の場合のみ / warm instance 内でキャッシュ） */
 async function ensureHeaders(sheetName, headers) {
+  if (_ensuredHeaders.has(sheetName)) return;   // キャッシュ済みならスキップ
   await ensureSheet(sheetName);
   const client = await getClient();
   const res = await client.spreadsheets.values.get({
@@ -151,6 +171,7 @@ async function ensureHeaders(sheetName, headers) {
       resource: { values: [headers] },
     });
   }
+  _ensuredHeaders.add(sheetName);
 }
 
 function columnToLetter(col) {
