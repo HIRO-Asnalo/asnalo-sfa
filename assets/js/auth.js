@@ -35,8 +35,13 @@ const Auth = (() => {
 
   function getUser() { return _user; }
 
-  function getToken() {
-    return _user?.token?.access_token || '';
+  async function getToken() {
+    if (!_user) return '';
+    try {
+      return await _user.jwt();
+    } catch {
+      return _user?.token?.access_token || '';
+    }
   }
 
   function logout() {

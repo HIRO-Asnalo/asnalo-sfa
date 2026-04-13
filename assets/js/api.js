@@ -7,7 +7,7 @@ const API = (() => {
   const BASE = '/api';
 
   async function request(method, path, body) {
-    const token = Auth.getToken();
+    const token = await Auth.getToken();
     const opts = {
       method,
       headers: {
