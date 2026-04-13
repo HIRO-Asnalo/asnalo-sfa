@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>フィールド設定 | アスナロ SFA</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+</head>
+<body class="app-layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-text">ASNALO SFA</div><div class="logo-sub">営業管理システム</div></div>
+    <nav class="sidebar-nav">
+      <a href="/" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>ダッシュボード</a>
+      <a href="/deals/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>案件管理</a>
+      <a href="/customers/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>顧客管理</a>
+      <a href="/ma/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>MAメール</a>
+      <div class="nav-section">設定</div>
+      <a href="/settings/fields.html" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>フィールド設定</a>
+    </nav>
+    <div class="sidebar-user" id="sidebarUser"></div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">フィールド設定</h1>
+      <div class="page-actions">
+        <button class="btn btn-primary" onclick="openAddModal()">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          フィールド追加
+        </button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="tabs">
+        <button class="tab-btn active" data-entity="deal" onclick="switchEntity('deal', this)">FS案件フィールド</button>
+        <button class="tab-btn" data-entity="customer" onclick="switchEntity('customer', this)">顧客フィールド（準備中）</button>
+      </div>
+
+      <div style="margin-bottom:14px;font-size:12.5px;color:var(--text-muted);">
+        ■ ここで追加・編集・削除したフィールドは、案件登録フォームにリアルタイムで反映されます。
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table id="fieldsTable">
+            <thead>
+              <tr>
+                <th style="width:30px;"></th>
+                <th>表示名（ラベル）</th>
+                <th>フィールドキー</th>
+                <th>タイプ</th>
+                <th>必須</th>
+                <th>選択肢</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="fieldsBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- フィールド追加/編集モーダル -->
+  <div class="modal-overlay hidden" id="fieldModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">フィールド追加</div>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editId">
+        <div class="form-grid">
+          <div class="form-group form-full">
+            <label class="form-label">表示名（ラベル）<span class="required">*</span></label>
+            <input type="text" class="form-input" id="f_label" placeholder="採用予算">
+          </div>
+          <div class="form-group">
+            <label class="form-label">フィールドキー</label>
+            <input type="text" class="form-input" id="f_field_key" placeholder="hire_budget">
+            <div style="font-size:11px;color:var(--text-muted);margin-top:3px;">英数字・アンダースコアのみ。新規追加時は自動生成も可。</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">タイプ</label>
+            <select class="form-select" id="f_type" onchange="toggleOptions()">
+              <option value="text">テキスト（1行）</option>
+              <option value="textarea">テキストエリア（複数行）</option>
+              <option value="date">日付</option>
+              <option value="select">セレクト（単一選択）</option>
+              <option value="multiselect">マルチセレクト（複数選択）</option>
+              <option value="number">数値</option>
+              <option value="email">メールアドレス</option>
+              <option value="url">URL</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">必須</label>
+            <select class="form-select" id="f_required">
+              <option value="false">任意</option>
+              <option value="true">必須</option>
+            </select>
+          </div>
+          <div class="form-group form-full" id="optionsGroup" style="display:none;">
+            <label class="form-label">選択肢（カンマ区切り）</label>
+            <input type="text" class="form-input" id="f_options" placeholder="選択肢A,選択肢B,選択肢C">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="saveField()">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/utils.js"></script>
+  <script>
+    let currentEntity = 'deal';
+    let allFields = [];
+
+    initPage(async () => {
+      await loadFields();
+    });
+
+    async function loadFields() {
+      Loading.show();
+      try {
+        allFields = await API.fields.list(currentEntity);
+        renderTable(allFields);
+      } catch(e) {
+        Toast.error('フィールド取得エラー: ' + e.message);
+      } finally {
+        Loading.hide();
+      }
+    }
+
+    function switchEntity(entity, btn) {
+      currentEntity = entity;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadFields();
+    }
+
+    const TYPE_LABELS = {
+      text: 'テキスト', textarea: 'テキストエリア', date: '日付',
+      select: 'セレクト', multiselect: 'マルチセレクト', number: '数値',
+      email: 'メール', url: 'URL', user: 'ユーザー',
+    };
+
+    function renderTable(fields) {
+      const tbody = document.getElementById('fieldsBody');
+      if (!fields.length) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-text">フィールドがありません</div></div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = fields.map((f, idx) => `
+        <tr>
+          <td style="color:var(--text-muted);font-size:16px;cursor:grab;" title="ドラッグで並び替え">⠿</td>
+          <td><strong>${f.label}</strong></td>
+          <td><code style="font-size:11.5px;background:var(--bg);padding:2px 6px;border-radius:4px;">${f.field_key}</code></td>
+          <td><span class="badge badge-blue">${TYPE_LABELS[f.type] || f.type}</span></td>
+          <td>${f.required === 'true' ? '<span class="badge badge-red">必須</span>' : '<span class="badge badge-gray">任意</span>'}</td>
+          <td style="font-size:12px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${f.options || '—'}</td>
+          <td style="white-space:nowrap;">
+            <button class="btn btn-ghost btn-sm" onclick="openEditModal('${f.id}')">編集</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteField('${f.id}', '${f.label}')">削除</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // ===== モーダル =====
+    function openAddModal() {
+      document.getElementById('modalTitle').textContent = 'フィールド追加';
+      document.getElementById('editId').value = '';
+      document.getElementById('f_label').value = '';
+      document.getElementById('f_field_key').value = '';
+      document.getElementById('f_type').value = 'text';
+      document.getElementById('f_required').value = 'false';
+      document.getElementById('f_options').value = '';
+      toggleOptions();
+      document.getElementById('fieldModal').classList.remove('hidden');
+    }
+
+    function openEditModal(id) {
+      const f = allFields.find(f => f.id === id);
+      if (!f) return;
+      document.getElementById('modalTitle').textContent = 'フィールド編集';
+      document.getElementById('editId').value = f.id;
+      document.getElementById('f_label').value = f.label;
+      document.getElementById('f_field_key').value = f.field_key;
+      document.getElementById('f_type').value = f.type;
+      document.getElementById('f_required').value = f.required;
+      document.getElementById('f_options').value = f.options || '';
+      toggleOptions();
+      document.getElementById('fieldModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('fieldModal').classList.add('hidden');
+    }
+
+    function toggleOptions() {
+      const type = document.getElementById('f_type').value;
+      document.getElementById('optionsGroup').style.display =
+        ['select', 'multiselect'].includes(type) ? 'block' : 'none';
+    }
+
+    async function saveField() {
+      const label = document.getElementById('f_label').value.trim();
+      if (!label) { Toast.error('表示名を入力してください'); return; }
+
+      const id = document.getElementById('editId').value;
+      const data = {
+        entity:    currentEntity,
+        label,
+        field_key: document.getElementById('f_field_key').value.trim() || undefined,
+        type:      document.getElementById('f_type').value,
+        required:  document.getElementById('f_required').value,
+        options:   document.getElementById('f_options').value.trim(),
+      };
+
+      try {
+        if (id) {
+          await API.fields.update({ id, ...data });
+          Toast.success('フィールドを更新しました');
+        } else {
+          await API.fields.create(data);
+          Toast.success('フィールドを追加しました');
+        }
+        closeModal();
+        await loadFields();
+      } catch(e) {
+        Toast.error('保存エラー: ' + e.message);
+      }
+    }
+
+    async function deleteField(id, label) {
+      if (!confirm(`「${label}」を削除しますか？\n※このフィールドに入力されたデータは影響を受けません。`)) return;
+      try {
+        await API.fields.delete(id);
+        Toast.success('削除しました');
+        await loadFields();
+      } catch(e) {
+        Toast.error('削除エラー: ' + e.message);
+      }
+    }
+  </script>
+</body>
+</html>

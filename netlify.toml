@@ -1,0 +1,38 @@
+[build]
+  functions = "netlify/functions"
+  publish = "."
+
+[functions]
+  node_bundler = "esbuild"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[[redirects]]
+  from = "/deals"
+  to = "/deals/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/customers"
+  to = "/customers/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/ma"
+  to = "/ma/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/settings"
+  to = "/settings/fields.html"
+  status = 200
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ログイン | アスナロ SFA</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+</head>
+<body class="login-page">
+  <div class="login-card">
+    <div class="login-logo">ASNALO SFA</div>
+    <div class="login-sub">株式会社アスナロ 社内営業管理システム</div>
+    <button class="btn btn-dark w-full btn-lg" onclick="netlifyIdentity.open()">
+      ログイン
+    </button>
+    <div style="margin-top:16px; font-size:12px; color:var(--text-muted); text-align:center;">
+      アカウントがない場合は管理者にお問い合わせください
+    </div>
+  </div>
+
+  <script>
+    netlifyIdentity.on('init', user => {
+      if (user) location.href = '/';
+    });
+    netlifyIdentity.on('login', () => {
+      netlifyIdentity.close();
+      location.href = '/';
+    });
+  </script>
+</body>
+</html>

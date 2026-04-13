@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>顧客詳細 | アスナロ SFA</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+</head>
+<body class="app-layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-text">ASNALO SFA</div><div class="logo-sub">営業管理システム</div></div>
+    <nav class="sidebar-nav">
+      <a href="/" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>ダッシュボード</a>
+      <a href="/deals/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>案件管理</a>
+      <a href="/customers/index.html" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>顧客管理</a>
+      <a href="/ma/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>MAメール</a>
+      <div class="nav-section">設定</div>
+      <a href="/settings/fields.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/></svg>フィールド設定</a>
+    </nav>
+    <div class="sidebar-user" id="sidebarUser"></div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <a href="/customers/index.html" style="color:var(--text-muted);text-decoration:none;font-size:13px;">← 顧客一覧</a>
+        <h1 class="page-title" id="pageTitle">顧客詳細</h1>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-danger btn-sm" id="deleteBtn">削除</button>
+        <button class="btn btn-primary" id="saveBtn">保存</button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;">
+
+        <!-- 左: 顧客情報フォーム -->
+        <div class="card">
+          <div class="card-title">顧客情報</div>
+          <div class="form-grid">
+            <div class="form-group form-full">
+              <label class="form-label">企業名 <span class="required">*</span></label>
+              <input type="text" class="form-input" id="company_name">
+            </div>
+            <div class="form-group">
+              <label class="form-label">業種</label>
+              <select class="form-select" id="industry">
+                <option value="">選択</option>
+                <option>IT・通信</option><option>製造</option><option>小売・流通</option>
+                <option>金融・保険</option><option>医療・福祉</option><option>建設・不動産</option>
+                <option>サービス</option><option>教育</option><option>その他</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">従業員数</label>
+              <input type="text" class="form-input" id="employee_count">
+            </div>
+            <div class="form-group">
+              <label class="form-label">電話番号</label>
+              <input type="text" class="form-input" id="phone">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Webサイト</label>
+              <input type="url" class="form-input" id="website" placeholder="https://">
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label">住所</label>
+              <input type="text" class="form-input" id="address">
+            </div>
+            <div class="form-group">
+              <label class="form-label">担当者名</label>
+              <input type="text" class="form-input" id="contact_name">
+            </div>
+            <div class="form-group">
+              <label class="form-label">担当者メール</label>
+              <input type="email" class="form-input" id="contact_email">
+            </div>
+            <div class="form-group">
+              <label class="form-label">担当者電話</label>
+              <input type="text" class="form-input" id="contact_phone">
+            </div>
+            <div class="form-group">
+              <label class="form-label" style="cursor:pointer;">
+                <input type="checkbox" id="ma_subscribed" style="margin-right:6px;">
+                MAリスト（ステップメール対象）
+              </label>
+            </div>
+            <div class="form-group form-full">
+              <label class="form-label">備考</label>
+              <textarea class="form-textarea" id="notes"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右: 関連案件・活動 -->
+        <div style="display:flex;flex-direction:column;gap:16px;">
+
+          <!-- 関連案件 -->
+          <div class="card">
+            <div class="card-title">
+              関連案件
+              <a id="newDealLink" href="#" class="btn btn-ghost btn-sm">+ 新規案件</a>
+            </div>
+            <div id="relatedDeals">
+              <div class="empty-state"><div class="empty-state-sub">読み込み中...</div></div>
+            </div>
+          </div>
+
+          <!-- 活動履歴 -->
+          <div class="card">
+            <div class="card-title">活動履歴</div>
+            <div style="margin-bottom:12px;">
+              <select class="form-select" id="activityType" style="margin-bottom:6px;">
+                <option>メモ</option><option>電話</option><option>訪問</option><option>メール</option>
+              </select>
+              <textarea class="form-textarea" id="activityContent" placeholder="内容..." style="min-height:60px;margin-bottom:6px;"></textarea>
+              <button class="btn btn-secondary btn-sm w-full" id="addActivityBtn">追加</button>
+            </div>
+            <div id="activityList"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/utils.js"></script>
+  <script>
+    const customerId = getParam('id');
+    let customer = {};
+
+    initPage(async () => {
+      if (!customerId) { location.href = '/customers/index.html'; return; }
+      Loading.show();
+      try {
+        const [c, allDeals] = await Promise.all([
+          API.customers.get(customerId),
+          API.deals.list(),
+        ]);
+        customer = c;
+        document.getElementById('pageTitle').textContent = c.company_name;
+        document.getElementById('newDealLink').href = `/deals/detail.html?new=1`;
+
+        // フォームに値を入れる
+        ['company_name','industry','employee_count','phone','website','address','contact_name','contact_email','contact_phone','notes'].forEach(k => {
+          const el = document.getElementById(k);
+          if (el) el.value = c[k] || '';
+        });
+        document.getElementById('ma_subscribed').checked = c.ma_subscribed === 'true';
+
+        // 関連案件
+        const related = allDeals.filter(d => d.customer_id === customerId);
+        renderRelatedDeals(related);
+
+        // 活動履歴
+        const activities = await API.activities.listByCustomer(customerId);
+        renderActivities(activities);
+
+      } catch(e) {
+        Toast.error('データ取得エラー: ' + e.message);
+      } finally {
+        Loading.hide();
+      }
+    });
+
+    function renderRelatedDeals(deals) {
+      const el = document.getElementById('relatedDeals');
+      if (!deals.length) {
+        el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">案件なし</div>';
+        return;
+      }
+      el.innerHTML = deals.map(d => `
+        <div style="padding:7px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <a href="/deals/detail.html?id=${d.id}" style="font-size:13px;font-weight:600;color:var(--primary);text-decoration:none;">${d.deal_name || '（無題）'}</a>
+          </div>
+          ${phaseBadge(d.phase)}
+        </div>
+      `).join('');
+    }
+
+    function renderActivities(activities) {
+      const el = document.getElementById('activityList');
+      if (!activities?.length) {
+        el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">活動記録なし</div>';
+        return;
+      }
+      const typeIcon = { '電話': '📞', '訪問': '🏢', 'メール': '📧', '商談': '💼', 'メモ': '📝' };
+      el.innerHTML = activities.slice(0, 10).map(a => `
+        <div style="padding:8px 0;border-bottom:1px solid var(--border);">
+          <div style="font-size:11px;color:var(--text-muted);">${typeIcon[a.type]||'📝'} ${a.type} · ${fmtDate(a.activity_date)}</div>
+          <div style="font-size:13px;margin-top:2px;">${a.content}</div>
+        </div>
+      `).join('');
+    }
+
+    // 保存
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      const company_name = document.getElementById('company_name').value.trim();
+      if (!company_name) { Toast.error('企業名を入力してください'); return; }
+      Loading.show();
+      try {
+        await API.customers.update({
+          id: customerId,
+          company_name,
+          industry:       document.getElementById('industry').value,
+          employee_count: document.getElementById('employee_count').value,
+          phone:          document.getElementById('phone').value,
+          website:        document.getElementById('website').value,
+          address:        document.getElementById('address').value,
+          contact_name:   document.getElementById('contact_name').value,
+          contact_email:  document.getElementById('contact_email').value,
+          contact_phone:  document.getElementById('contact_phone').value,
+          notes:          document.getElementById('notes').value,
+          ma_subscribed:  document.getElementById('ma_subscribed').checked ? 'true' : 'false',
+        });
+        Toast.success('保存しました');
+        document.getElementById('pageTitle').textContent = company_name;
+      } catch(e) {
+        Toast.error('保存エラー: ' + e.message);
+      } finally {
+        Loading.hide();
+      }
+    });
+
+    // 削除
+    document.getElementById('deleteBtn').addEventListener('click', async () => {
+      if (!confirm('この顧客を削除しますか？')) return;
+      try {
+        await API.customers.delete(customerId);
+        location.href = '/customers/index.html';
+      } catch(e) {
+        Toast.error('削除エラー: ' + e.message);
+      }
+    });
+
+    // 活動追加
+    document.getElementById('addActivityBtn').addEventListener('click', async () => {
+      const content = document.getElementById('activityContent').value.trim();
+      if (!content) { Toast.error('内容を入力してください'); return; }
+      try {
+        await API.activities.create({
+          customer_id: customerId,
+          type: document.getElementById('activityType').value,
+          content,
+          activity_date: new Date().toISOString().slice(0, 10),
+        });
+        document.getElementById('activityContent').value = '';
+        Toast.success('活動を追加しました');
+        const acts = await API.activities.listByCustomer(customerId);
+        renderActivities(acts);
+      } catch(e) {
+        Toast.error('エラー: ' + e.message);
+      }
+    });
+  </script>
+</body>
+</html>

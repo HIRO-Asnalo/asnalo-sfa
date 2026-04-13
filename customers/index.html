@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>顧客管理 | アスナロ SFA</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+</head>
+<body class="app-layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-text">ASNALO SFA</div><div class="logo-sub">営業管理システム</div></div>
+    <nav class="sidebar-nav">
+      <a href="/" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>ダッシュボード</a>
+      <a href="/deals/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>案件管理</a>
+      <a href="/customers/index.html" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>顧客管理</a>
+      <a href="/ma/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>MAメール</a>
+      <div class="nav-section">設定</div>
+      <a href="/settings/fields.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>フィールド設定</a>
+    </nav>
+    <div class="sidebar-user" id="sidebarUser"></div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">顧客管理</h1>
+      <div class="page-actions">
+        <button class="btn btn-primary" onclick="openNewModal()">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          新規顧客
+        </button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="filter-bar">
+        <input type="text" class="search-input" id="searchInput" placeholder="企業名・担当者名で検索">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);">
+          <input type="checkbox" id="maFilter"> MAリスト登録済みのみ
+        </label>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>企業名</th>
+                <th>業種</th>
+                <th>担当者名</th>
+                <th>メール</th>
+                <th>電話番号</th>
+                <th>MAリスト</th>
+                <th>登録日</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="customersBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 新規顧客モーダル -->
+  <div class="modal-overlay hidden" id="newModal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title">新規顧客登録</div>
+        <button class="modal-close" onclick="closeModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-grid">
+          <div class="form-group form-full">
+            <label class="form-label">企業名 <span class="required">*</span></label>
+            <input type="text" class="form-input" id="new_company_name" placeholder="株式会社〇〇">
+          </div>
+          <div class="form-group">
+            <label class="form-label">業種</label>
+            <select class="form-select" id="new_industry">
+              <option value="">選択</option>
+              <option>IT・通信</option><option>製造</option><option>小売・流通</option>
+              <option>金融・保険</option><option>医療・福祉</option><option>建設・不動産</option>
+              <option>サービス</option><option>教育</option><option>その他</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">従業員数</label>
+            <input type="text" class="form-input" id="new_employee_count" placeholder="50名">
+          </div>
+          <div class="form-group">
+            <label class="form-label">担当者名</label>
+            <input type="text" class="form-input" id="new_contact_name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">担当者メール</label>
+            <input type="email" class="form-input" id="new_contact_email">
+          </div>
+          <div class="form-group">
+            <label class="form-label">電話番号</label>
+            <input type="text" class="form-input" id="new_phone">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Webサイト</label>
+            <input type="url" class="form-input" id="new_website" placeholder="https://">
+          </div>
+          <div class="form-group form-full">
+            <label class="form-label">住所</label>
+            <input type="text" class="form-input" id="new_address">
+          </div>
+          <div class="form-group form-full">
+            <label class="form-label">備考</label>
+            <textarea class="form-textarea" id="new_notes"></textarea>
+          </div>
+          <div class="form-group form-full">
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="new_ma_subscribed">
+              MAリスト（ステップメール対象）に追加する
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="closeModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="createCustomer()">登録する</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/utils.js"></script>
+  <script>
+    let allCustomers = [];
+
+    initPage(async () => {
+      try {
+        allCustomers = await API.customers.list();
+        renderTable(allCustomers);
+      } catch(e) {
+        Toast.error('データ取得エラー: ' + e.message);
+      }
+    });
+
+    function getFiltered() {
+      const q  = document.getElementById('searchInput').value.toLowerCase();
+      const ma = document.getElementById('maFilter').checked;
+      return allCustomers.filter(c => {
+        if (q && !c.company_name?.toLowerCase().includes(q) && !c.contact_name?.toLowerCase().includes(q)) return false;
+        if (ma && c.ma_subscribed !== 'true') return false;
+        return true;
+      });
+    }
+
+    document.getElementById('searchInput').addEventListener('input', () => renderTable(getFiltered()));
+    document.getElementById('maFilter').addEventListener('change', () => renderTable(getFiltered()));
+
+    function renderTable(customers) {
+      const tbody = document.getElementById('customersBody');
+      if (!customers.length) {
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-text">顧客がありません</div></div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = customers.map(c => `
+        <tr>
+          <td><a href="/customers/detail.html?id=${c.id}" style="font-weight:600;color:var(--primary);text-decoration:none;">${c.company_name}</a></td>
+          <td>${c.industry || '—'}</td>
+          <td>${c.contact_name || '—'}</td>
+          <td>${c.contact_email ? `<a href="mailto:${c.contact_email}" style="color:var(--info);">${c.contact_email}</a>` : '—'}</td>
+          <td>${c.phone || '—'}</td>
+          <td><span class="badge ${c.ma_subscribed === 'true' ? 'badge-green' : 'badge-gray'}">${c.ma_subscribed === 'true' ? '登録済み' : '未登録'}</span></td>
+          <td>${fmtDate(c.created_at)}</td>
+          <td><a href="/customers/detail.html?id=${c.id}" class="btn btn-ghost btn-sm">詳細</a></td>
+        </tr>
+      `).join('');
+    }
+
+    // ===== モーダル =====
+    function openNewModal() {
+      document.getElementById('newModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('newModal').classList.add('hidden');
+    }
+
+    async function createCustomer() {
+      const company_name = document.getElementById('new_company_name').value.trim();
+      if (!company_name) { Toast.error('企業名を入力してください'); return; }
+      try {
+        const newC = await API.customers.create({
+          company_name,
+          industry:       document.getElementById('new_industry').value,
+          employee_count: document.getElementById('new_employee_count').value,
+          contact_name:   document.getElementById('new_contact_name').value,
+          contact_email:  document.getElementById('new_contact_email').value,
+          phone:          document.getElementById('new_phone').value,
+          website:        document.getElementById('new_website').value,
+          address:        document.getElementById('new_address').value,
+          notes:          document.getElementById('new_notes').value,
+          ma_subscribed:  document.getElementById('new_ma_subscribed').checked ? 'true' : 'false',
+        });
+        allCustomers.unshift(newC);
+        renderTable(allCustomers);
+        closeModal();
+        Toast.success('顧客を登録しました');
+      } catch(e) {
+        Toast.error('登録エラー: ' + e.message);
+      }
+    }
+  </script>
+</body>
+</html>

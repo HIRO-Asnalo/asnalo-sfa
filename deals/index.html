@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>案件管理 | アスナロ SFA</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+</head>
+<body class="app-layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-text">ASNALO SFA</div><div class="logo-sub">営業管理システム</div></div>
+    <nav class="sidebar-nav">
+      <a href="/" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>ダッシュボード</a>
+      <a href="/deals/index.html" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>案件管理</a>
+      <a href="/customers/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>顧客管理</a>
+      <a href="/ma/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>MAメール</a>
+      <div class="nav-section">設定</div>
+      <a href="/settings/fields.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>フィールド設定</a>
+    </nav>
+    <div class="sidebar-user" id="sidebarUser"></div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">案件管理</h1>
+      <div class="page-actions">
+        <div class="view-toggle">
+          <button class="view-btn active" id="viewKanban" title="カンバン">
+            <svg viewBox="0 0 24 24"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="18" rx="1"/><rect x="17" y="3" width="4" height="18" rx="1"/></svg>
+          </button>
+          <button class="view-btn" id="viewTable" title="テーブル">
+            <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          </button>
+        </div>
+        <a href="/deals/detail.html?new=1" class="btn btn-primary">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          新規案件
+        </a>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <input type="text" class="search-input" id="searchInput" placeholder="案件名・顧客名で検索">
+        <select class="form-select" id="phaseFilter" style="width:140px;">
+          <option value="">フェーズ: すべて</option>
+          <option>認知商談</option><option>ヒアリング</option><option>提案</option>
+          <option>クロージング</option><option>受注</option><option>失注</option>
+        </select>
+        <select class="form-select" id="userFilter" style="width:160px;">
+          <option value="">担当: すべて</option>
+        </select>
+      </div>
+
+      <!-- Kanban View -->
+      <div id="kanbanView">
+        <div class="kanban-wrap" id="kanbanWrap"></div>
+      </div>
+
+      <!-- Table View -->
+      <div id="tableView" class="hidden">
+        <div class="card">
+          <div class="table-wrap">
+            <table id="dealsTable">
+              <thead>
+                <tr>
+                  <th>案件名</th>
+                  <th>顧客</th>
+                  <th>フェーズ</th>
+                  <th>受注予定日</th>
+                  <th>担当</th>
+                  <th>更新日</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="dealsBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/utils.js"></script>
+  <script>
+    const PHASES = ['認知商談', 'ヒアリング', '提案', 'クロージング', '受注', '失注'];
+    let allDeals = [];
+    let customersMap = {};
+    let currentView = 'kanban';
+
+    initPage(async () => {
+      try {
+        [allDeals, customersMap] = await Promise.all([
+          API.deals.list(),
+          getCustomersMap(),
+        ]);
+        populateUserFilter(allDeals);
+        renderCurrentView();
+      } catch(e) {
+        Toast.error('データ取得エラー: ' + e.message);
+      }
+    });
+
+    // ===== フィルター処理 =====
+    function getFiltered() {
+      const q     = document.getElementById('searchInput').value.trim().toLowerCase();
+      const phase = document.getElementById('phaseFilter').value;
+      const user  = document.getElementById('userFilter').value;
+
+      return allDeals.filter(d => {
+        const cname = customersMap[d.customer_id]?.company_name || '';
+        if (q && !d.deal_name?.toLowerCase().includes(q) && !cname.toLowerCase().includes(q)) return false;
+        if (phase && d.phase !== phase) return false;
+        if (user && d.assigned_user !== user) return false;
+        return true;
+      });
+    }
+
+    document.getElementById('searchInput').addEventListener('input', renderCurrentView);
+    document.getElementById('phaseFilter').addEventListener('change', renderCurrentView);
+    document.getElementById('userFilter').addEventListener('change', renderCurrentView);
+
+    function populateUserFilter(deals) {
+      const users = [...new Set(deals.map(d => d.assigned_user).filter(Boolean))];
+      const sel = document.getElementById('userFilter');
+      users.forEach(u => {
+        const opt = document.createElement('option');
+        opt.value = opt.textContent = u;
+        sel.appendChild(opt);
+      });
+    }
+
+    // ===== 表示切り替え =====
+    document.getElementById('viewKanban').addEventListener('click', () => {
+      currentView = 'kanban';
+      document.getElementById('viewKanban').classList.add('active');
+      document.getElementById('viewTable').classList.remove('active');
+      document.getElementById('kanbanView').classList.remove('hidden');
+      document.getElementById('tableView').classList.add('hidden');
+      renderKanban();
+    });
+
+    document.getElementById('viewTable').addEventListener('click', () => {
+      currentView = 'table';
+      document.getElementById('viewTable').classList.add('active');
+      document.getElementById('viewKanban').classList.remove('active');
+      document.getElementById('tableView').classList.remove('hidden');
+      document.getElementById('kanbanView').classList.add('hidden');
+      renderTable();
+    });
+
+    function renderCurrentView() {
+      if (currentView === 'kanban') renderKanban();
+      else renderTable();
+    }
+
+    // ===== カンバン =====
+    function renderKanban() {
+      const filtered = getFiltered();
+      const wrap = document.getElementById('kanbanWrap');
+      wrap.innerHTML = PHASES.map(phase => {
+        const cards = filtered.filter(d => d.phase === phase);
+        return `
+          <div class="kanban-col">
+            <div class="kanban-col-header">
+              <span>${phase}</span>
+              <span class="kanban-col-count">${cards.length}</span>
+            </div>
+            <div class="kanban-cards">
+              ${cards.length ? cards.map(d => kanbanCard(d)).join('') : `<div style="text-align:center;padding:16px;font-size:12px;color:var(--text-muted);">案件なし</div>`}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      wrap.querySelectorAll('.kanban-card').forEach(el => {
+        el.addEventListener('click', () => {
+          location.href = `/deals/detail.html?id=${el.dataset.id}`;
+        });
+      });
+    }
+
+    function kanbanCard(d) {
+      const cname = customersMap[d.customer_id]?.company_name || '—';
+      const days  = daysSince(d.updated_at);
+      return `
+        <div class="kanban-card" data-id="${d.id}">
+          <div class="kanban-card-title">${d.deal_name || '（無題）'}</div>
+          <div class="kanban-card-customer">${cname}</div>
+          <div class="kanban-card-meta">
+            <span>${d.assigned_user || '—'}</span>
+            <span>${days !== null ? days + '日前' : ''}</span>
+          </div>
+          ${d.expected_close_date ? `<div style="margin-top:6px;font-size:11px;color:var(--text-muted);">受注予定: ${fmtDate(d.expected_close_date)}</div>` : ''}
+        </div>
+      `;
+    }
+
+    // ===== テーブル =====
+    function renderTable() {
+      const filtered = getFiltered();
+      const tbody = document.getElementById('dealsBody');
+      if (!filtered.length) {
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><div class="empty-state-text">案件がありません</div></div></td></tr>`;
+        return;
+      }
+      tbody.innerHTML = filtered.map(d => {
+        const cname = customersMap[d.customer_id]?.company_name || '—';
+        return `
+          <tr>
+            <td><a href="/deals/detail.html?id=${d.id}" style="font-weight:600;color:var(--primary);text-decoration:none;">${d.deal_name || '（無題）'}</a></td>
+            <td>${cname}</td>
+            <td>${phaseBadge(d.phase)}</td>
+            <td>${fmtDate(d.expected_close_date)}</td>
+            <td>${d.assigned_user || '—'}</td>
+            <td>${fmtDate(d.updated_at)}</td>
+            <td>
+              <a href="/deals/detail.html?id=${d.id}" class="btn btn-ghost btn-sm">詳細</a>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+  </script>
+</body>
+</html>

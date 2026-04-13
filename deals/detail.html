@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>案件詳細 | アスナロ SFA</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+</head>
+<body class="app-layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-text">ASNALO SFA</div><div class="logo-sub">営業管理システム</div></div>
+    <nav class="sidebar-nav">
+      <a href="/" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>ダッシュボード</a>
+      <a href="/deals/index.html" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>案件管理</a>
+      <a href="/customers/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>顧客管理</a>
+      <a href="/ma/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>MAメール</a>
+      <div class="nav-section">設定</div>
+      <a href="/settings/fields.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>フィールド設定</a>
+    </nav>
+    <div class="sidebar-user" id="sidebarUser"></div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div style="display:flex;align-items:center;gap:12px;">
+        <a href="/deals/index.html" style="color:var(--text-muted);text-decoration:none;font-size:13px;">← 案件一覧</a>
+        <h1 class="page-title" id="pageTitle">案件詳細</h1>
+        <span id="phaseBadgeHeader"></span>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-danger btn-sm" id="deleteBtn" style="display:none;">削除</button>
+        <button class="btn btn-primary" id="saveBtn">保存</button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div style="display:grid;grid-template-columns:1fr 360px;gap:20px;align-items:start;">
+
+        <!-- 左: 案件フォーム -->
+        <div>
+          <!-- 顧客選択 -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-title">顧客情報</div>
+            <div class="form-group">
+              <label class="form-label">顧客名 <span class="required">*</span></label>
+              <select class="form-select" id="customerSelect">
+                <option value="">企業名で選択...</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- FS案件フォーム（フィールド設定から動的生成） -->
+          <div class="card" id="dealFormCard">
+            <div class="card-title">FS案件情報</div>
+            <div id="dealFormFields"></div>
+          </div>
+        </div>
+
+        <!-- 右: 活動履歴 -->
+        <div>
+          <div class="card">
+            <div class="card-title">活動履歴</div>
+
+            <!-- 活動追加フォーム -->
+            <div style="margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border);">
+              <div class="form-group" style="margin-bottom:8px;">
+                <select class="form-select" id="activityType">
+                  <option>メモ</option><option>電話</option><option>訪問</option>
+                  <option>メール</option><option>商談</option>
+                </select>
+              </div>
+              <div class="form-group" style="margin-bottom:8px;">
+                <input type="date" class="form-input" id="activityDate">
+              </div>
+              <div class="form-group" style="margin-bottom:8px;">
+                <textarea class="form-textarea" id="activityContent" placeholder="内容を入力..." style="min-height:70px;"></textarea>
+              </div>
+              <button class="btn btn-secondary btn-sm w-full" id="addActivityBtn">追加</button>
+            </div>
+
+            <!-- 活動リスト -->
+            <div id="activityList">
+              <div class="empty-state"><div class="empty-state-sub">活動記録なし</div></div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/utils.js"></script>
+  <script>
+    const dealId  = getParam('id');
+    const isNew   = !!getParam('new');
+    let deal      = {};
+    let fields    = [];
+    let customers = [];
+
+    initPage(async (user) => {
+      // 今日の日付をデフォルトに
+      document.getElementById('activityDate').value = new Date().toISOString().slice(0, 10);
+
+      Loading.show();
+      try {
+        [fields, customers] = await Promise.all([
+          API.fields.list('deal'),
+          API.customers.list(),
+        ]);
+
+        if (!isNew && dealId) {
+          deal = await API.deals.get(dealId);
+          document.getElementById('pageTitle').textContent = deal.deal_name || '（無題）';
+          document.getElementById('phaseBadgeHeader').innerHTML = phaseBadge(deal.phase);
+          document.getElementById('deleteBtn').style.display = 'inline-flex';
+          loadActivities();
+        } else {
+          document.getElementById('pageTitle').textContent = '新規案件';
+          deal = { assigned_user: user?.email || '' };
+        }
+
+        renderCustomerSelect(customers, deal.customer_id);
+        renderFormFields(fields, deal);
+
+      } catch(e) {
+        Toast.error('データ取得エラー: ' + e.message);
+      } finally {
+        Loading.hide();
+      }
+    });
+
+    // ===== 顧客選択 =====
+    function renderCustomerSelect(customers, selectedId) {
+      const sel = document.getElementById('customerSelect');
+      customers.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = c.company_name;
+        if (c.id === selectedId) opt.selected = true;
+        sel.appendChild(opt);
+      });
+    }
+
+    // ===== フォームフィールド動的生成 =====
+    function renderFormFields(fields, data) {
+      const container = document.getElementById('dealFormFields');
+      // セクション分け（BASEフィールド、BANT、採用情報、進捗）
+      const sections = [
+        { label: '基本情報', keys: ['deal_name','pattern','phase','expected_close_date','channel','checklist','appointment_date','appointment_bg','first_visit_date','proposal_date','meeting3','meeting4'] },
+        { label: 'BANT', keys: ['budget','authority','needs','timeframe','competitor','human_resources'] },
+        { label: '採用情報', keys: ['hire_count','job_types','hire_target','past_results'] },
+        { label: '商談詳細', keys: ['identify_pain','pain_assumption','red_flag','selection_month','joy_seeds','grip_point'] },
+        { label: '結果', keys: ['loss_reason','screen2_fail','screen3_fail','screen4_fail','resign_reason','final_fail'] },
+        { label: 'アクション', keys: ['next_action','assigned_user','contact_person','agency','tags','memo'] },
+      ];
+
+      container.innerHTML = sections.map(sec => {
+        const secFields = sec.keys
+          .map(k => fields.find(f => f.field_key === k))
+          .filter(Boolean);
+        if (!secFields.length) return '';
+        return `
+          <div class="form-section">
+            <div class="form-section-title">${sec.label}</div>
+            <div class="form-grid">${secFields.map(f => renderField(f, data[f.field_key])).join('')}</div>
+          </div>
+        `;
+      }).join('');
+
+      // その他（セクション未分類）
+      const categorized = sections.flatMap(s => s.keys);
+      const others = fields.filter(f => !categorized.includes(f.field_key));
+      if (others.length) {
+        container.innerHTML += `
+          <div class="form-section">
+            <div class="form-section-title">その他</div>
+            <div class="form-grid">${others.map(f => renderField(f, data[f.field_key])).join('')}</div>
+          </div>
+        `;
+      }
+    }
+
+    function renderField(field, value = '') {
+      const required = field.required === 'true';
+      const label = `<label class="form-label" for="f_${field.field_key}">${field.label}${required ? '<span class="required">*</span>' : ''}</label>`;
+      let input = '';
+      const opts = field.options ? field.options.split(',') : [];
+
+      switch(field.type) {
+        case 'textarea':
+          input = `<textarea class="form-textarea" id="f_${field.field_key}" name="${field.field_key}" ${required ? 'required' : ''}>${value}</textarea>`;
+          break;
+        case 'date':
+          input = `<input type="date" class="form-input" id="f_${field.field_key}" name="${field.field_key}" value="${value}" ${required ? 'required' : ''}>`;
+          break;
+        case 'select':
+          input = `<select class="form-select" id="f_${field.field_key}" name="${field.field_key}" ${required ? 'required' : ''}>
+            <option value="">選択してください</option>
+            ${opts.map(o => `<option ${value === o.trim() ? 'selected' : ''}>${o.trim()}</option>`).join('')}
+          </select>`;
+          break;
+        case 'multiselect':
+          const vals = value ? value.split(',') : [];
+          input = `<div style="display:flex;flex-wrap:wrap;gap:6px;" id="f_${field.field_key}" data-name="${field.field_key}">
+            ${opts.map(o => `<label style="display:flex;align-items:center;gap:4px;font-size:12.5px;">
+              <input type="checkbox" value="${o.trim()}" ${vals.includes(o.trim()) ? 'checked' : ''}> ${o.trim()}
+            </label>`).join('')}
+          </div>`;
+          break;
+        case 'number':
+          input = `<input type="number" class="form-input" id="f_${field.field_key}" name="${field.field_key}" value="${value}" ${required ? 'required' : ''}>`;
+          break;
+        case 'email':
+          input = `<input type="email" class="form-input" id="f_${field.field_key}" name="${field.field_key}" value="${value}" ${required ? 'required' : ''}>`;
+          break;
+        case 'url':
+          input = `<input type="url" class="form-input" id="f_${field.field_key}" name="${field.field_key}" value="${value}" ${required ? 'required' : ''}>`;
+          break;
+        default: // text, user
+          input = `<input type="text" class="form-input" id="f_${field.field_key}" name="${field.field_key}" value="${value}" ${required ? 'required' : ''}>`;
+      }
+
+      const isLong = ['textarea'].includes(field.type) || ['needs','identify_pain','pain_assumption','red_flag','next_action','memo','joy_seeds','grip_point','loss_reason'].includes(field.field_key);
+      return `<div class="form-group ${isLong ? 'form-full' : ''}">${label}${input}</div>`;
+    }
+
+    // ===== 保存 =====
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      Loading.show();
+      try {
+        const data = collectFormData();
+        data.customer_id = document.getElementById('customerSelect').value;
+        if (!data.customer_id) { Toast.error('顧客を選択してください'); Loading.hide(); return; }
+
+        if (isNew || !dealId) {
+          const created = await API.deals.create(data);
+          Toast.success('案件を作成しました');
+          location.href = `/deals/detail.html?id=${created.id}`;
+        } else {
+          await API.deals.update({ id: dealId, ...data });
+          Toast.success('保存しました');
+          document.getElementById('phaseBadgeHeader').innerHTML = phaseBadge(data.phase);
+        }
+      } catch(e) {
+        Toast.error('保存エラー: ' + e.message);
+      } finally {
+        Loading.hide();
+      }
+    });
+
+    function collectFormData() {
+      const data = {};
+      fields.forEach(f => {
+        if (f.type === 'multiselect') {
+          const el = document.getElementById('f_' + f.field_key);
+          if (el) {
+            const checked = [...el.querySelectorAll('input[type=checkbox]:checked')].map(cb => cb.value);
+            data[f.field_key] = checked.join(',');
+          }
+        } else {
+          const el = document.getElementById('f_' + f.field_key);
+          if (el) data[f.field_key] = el.value;
+        }
+      });
+      return data;
+    }
+
+    // ===== 削除 =====
+    document.getElementById('deleteBtn').addEventListener('click', async () => {
+      if (!confirm('この案件を削除しますか？この操作は取り消せません。')) return;
+      Loading.show();
+      try {
+        await API.deals.delete(dealId);
+        Toast.success('削除しました');
+        location.href = '/deals/index.html';
+      } catch(e) {
+        Toast.error('削除エラー: ' + e.message);
+        Loading.hide();
+      }
+    });
+
+    // ===== 活動履歴 =====
+    async function loadActivities() {
+      if (!dealId) return;
+      const activities = await API.activities.listByDeal(dealId);
+      renderActivities(activities);
+    }
+
+    function renderActivities(activities) {
+      const el = document.getElementById('activityList');
+      if (!activities?.length) {
+        el.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--text-muted);padding:16px;">活動記録なし</div>';
+        return;
+      }
+      const typeIcon = { '電話': '📞', '訪問': '🏢', 'メール': '📧', '商談': '💼', 'メモ': '📝' };
+      el.innerHTML = `<div class="timeline">${activities.map(a => `
+        <div class="timeline-item">
+          <div class="timeline-icon">${typeIcon[a.type] || '📝'}</div>
+          <div class="timeline-content">
+            <div class="timeline-meta">${fmtDate(a.activity_date)} ・ ${a.type}</div>
+            <div class="timeline-text">${a.content || '—'}</div>
+          </div>
+        </div>
+      `).join('')}</div>`;
+    }
+
+    document.getElementById('addActivityBtn').addEventListener('click', async () => {
+      const content = document.getElementById('activityContent').value.trim();
+      if (!content) { Toast.error('内容を入力してください'); return; }
+      if (!dealId) { Toast.error('先に案件を保存してください'); return; }
+      try {
+        await API.activities.create({
+          deal_id: dealId,
+          type: document.getElementById('activityType').value,
+          content,
+          activity_date: document.getElementById('activityDate').value,
+        });
+        document.getElementById('activityContent').value = '';
+        Toast.success('活動を追加しました');
+        loadActivities();
+      } catch(e) {
+        Toast.error('エラー: ' + e.message);
+      }
+    });
+  </script>
+</body>
+</html>
