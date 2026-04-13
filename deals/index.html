@@ -92,15 +92,11 @@
   <script>
     const PHASES = ['認知商談', 'ヒアリング', '提案', 'クロージング', '受注', '失注'];
     let allDeals = [];
-    let customersMap = {};
     let currentView = 'kanban';
 
     initPage(async () => {
       try {
-        [allDeals, customersMap] = await Promise.all([
-          API.deals.list(),
-          getCustomersMap(),
-        ]);
+        allDeals = await API.deals.list();
         populateUserFilter(allDeals);
         renderCurrentView();
       } catch(e) {
@@ -115,7 +111,7 @@
       const user  = document.getElementById('userFilter').value;
 
       return allDeals.filter(d => {
-        const cname = customersMap[d.customer_id]?.company_name || '';
+        const cname = d.company_name || '';
         if (q && !d.deal_name?.toLowerCase().includes(q) && !cname.toLowerCase().includes(q)) return false;
         if (phase && d.phase !== phase) return false;
         if (user && d.assigned_user !== user) return false;
@@ -188,7 +184,7 @@
     }
 
     function kanbanCard(d) {
-      const cname = customersMap[d.customer_id]?.company_name || '—';
+      const cname = d.company_name || '—';
       const days  = daysSince(d.updated_at);
       return `
         <div class="kanban-card" data-id="${d.id}">
@@ -212,7 +208,7 @@
         return;
       }
       tbody.innerHTML = filtered.map(d => {
-        const cname = customersMap[d.customer_id]?.company_name || '—';
+        const cname = d.company_name || '—';
         return `
           <tr>
             <td><a href="/deals/detail.html?id=${d.id}" style="font-weight:600;color:var(--primary);text-decoration:none;">${d.deal_name || '（無題）'}</a></td>

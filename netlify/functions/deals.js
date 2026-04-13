@@ -13,7 +13,7 @@ const { requireAuth } = require('./_auth');
 
 const SHEET = 'FS案件';
 const HEADERS = [
-  'id', 'customer_id', 'deal_name', 'pattern', 'phase', 'expected_close_date',
+  'id', 'company_name', 'deal_name', 'pattern', 'phase', 'expected_close_date',
   'channel', 'checklist', 'appointment_date', 'appointment_bg', 'first_visit_date',
   'proposal_date', 'meeting3', 'meeting4', 'budget', 'authority', 'needs',
   'timeframe', 'competitor', 'human_resources', 'hire_count', 'job_types',

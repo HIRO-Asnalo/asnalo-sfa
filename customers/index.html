@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>顧客管理 | アスナロ SFA</title>
+  <title>顧客管理（契約後CRM）| アスナロ SFA</title>
   <link rel="stylesheet" href="/assets/css/main.css">
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 </head>
@@ -24,39 +24,88 @@
 
   <main class="main-content">
     <div class="page-header">
-      <h1 class="page-title">顧客管理</h1>
+      <div>
+        <h1 class="page-title">顧客管理</h1>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">契約済みクライアントのCRM管理</div>
+      </div>
       <div class="page-actions">
         <button class="btn btn-primary" onclick="openNewModal()">
           <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-          新規顧客
+          新規顧客登録
         </button>
       </div>
     </div>
 
     <div class="page-body">
-      <div class="filter-bar">
-        <input type="text" class="search-input" id="searchInput" placeholder="企業名・担当者名で検索">
-        <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-muted);">
-          <input type="checkbox" id="maFilter"> MAリスト登録済みのみ
-        </label>
+
+      <!-- タブ + フィルター -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+        <div class="tabs" style="margin-bottom:0;">
+          <button class="tab-btn active" data-view="all"   onclick="switchView('all',this)">すべて</button>
+          <button class="tab-btn"        data-view="sales" onclick="switchView('sales',this)">セールス</button>
+          <button class="tab-btn"        data-view="cs"    onclick="switchView('cs',this)">CS</button>
+        </div>
+        <div class="filter-bar" style="margin-bottom:0;">
+          <input type="text" class="search-input" id="searchInput" placeholder="企業名で検索">
+          <select class="form-select" id="csStatusFilter" style="width:140px;">
+            <option value="">CSステータス: すべて</option>
+            <option>アクティブ</option>
+            <option>オンボーディング中</option>
+            <option>更新交渉中</option>
+            <option>解約リスク</option>
+            <option>解約済み</option>
+          </select>
+        </div>
       </div>
 
       <div class="card">
         <div class="table-wrap">
-          <table>
+          <!-- すべてビュー -->
+          <table id="tableAll">
             <thead>
               <tr>
                 <th>企業名</th>
                 <th>業種</th>
-                <th>担当者名</th>
-                <th>メール</th>
-                <th>電話番号</th>
-                <th>MAリスト</th>
-                <th>登録日</th>
+                <th>CSステータス</th>
+                <th>担当者</th>
+                <th>チャーンリスク</th>
+                <th>契約日</th>
                 <th></th>
               </tr>
             </thead>
-            <tbody id="customersBody"></tbody>
+            <tbody id="bodyAll"></tbody>
+          </table>
+
+          <!-- セールスビュー -->
+          <table id="tableSales" style="display:none;">
+            <thead>
+              <tr>
+                <th>企業名</th>
+                <th>担当者</th>
+                <th>契約種別</th>
+                <th>契約金額</th>
+                <th>アップセル状況</th>
+                <th>MAリスト</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="bodySales"></tbody>
+          </table>
+
+          <!-- CSビュー -->
+          <table id="tableCS" style="display:none;">
+            <thead>
+              <tr>
+                <th>企業名</th>
+                <th>CSステータス</th>
+                <th>オンボーディング</th>
+                <th>満足度</th>
+                <th>チャーンリスク</th>
+                <th>CS担当</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="bodyCS"></tbody>
           </table>
         </div>
       </div>
@@ -90,7 +139,7 @@
             <input type="text" class="form-input" id="new_employee_count" placeholder="50名">
           </div>
           <div class="form-group">
-            <label class="form-label">担当者名</label>
+            <label class="form-label">担当者名（先方）</label>
             <input type="text" class="form-input" id="new_contact_name">
           </div>
           <div class="form-group">
@@ -98,26 +147,41 @@
             <input type="email" class="form-input" id="new_contact_email">
           </div>
           <div class="form-group">
-            <label class="form-label">電話番号</label>
-            <input type="text" class="form-input" id="new_phone">
+            <label class="form-label">契約種別</label>
+            <select class="form-select" id="new_contract_type">
+              <option value="">選択</option>
+              <option>フルサポ採用</option>
+              <option>CLUTCH Agent</option>
+              <option>その他</option>
+            </select>
           </div>
           <div class="form-group">
-            <label class="form-label">Webサイト</label>
-            <input type="url" class="form-input" id="new_website" placeholder="https://">
+            <label class="form-label">契約日</label>
+            <input type="date" class="form-input" id="new_contract_date">
           </div>
-          <div class="form-group form-full">
-            <label class="form-label">住所</label>
-            <input type="text" class="form-input" id="new_address">
+          <div class="form-group">
+            <label class="form-label">CS担当</label>
+            <input type="text" class="form-input" id="new_cs_rep">
           </div>
-          <div class="form-group form-full">
-            <label class="form-label">備考</label>
-            <textarea class="form-textarea" id="new_notes"></textarea>
+          <div class="form-group">
+            <label class="form-label">CSステータス</label>
+            <select class="form-select" id="new_cs_status">
+              <option value="">選択</option>
+              <option>オンボーディング中</option>
+              <option>アクティブ</option>
+              <option>更新交渉中</option>
+              <option>解約リスク</option>
+              <option>解約済み</option>
+            </select>
           </div>
-          <div class="form-group form-full">
-            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
-              <input type="checkbox" id="new_ma_subscribed">
-              MAリスト（ステップメール対象）に追加する
-            </label>
+          <div class="form-group">
+            <label class="form-label">オンボーディング</label>
+            <select class="form-select" id="new_onboarding_status">
+              <option value="">選択</option>
+              <option>未開始</option>
+              <option>進行中</option>
+              <option>完了</option>
+            </select>
           </div>
         </div>
       </div>
@@ -133,52 +197,94 @@
   <script src="/assets/js/utils.js"></script>
   <script>
     let allCustomers = [];
+    let currentView  = 'all';
 
     initPage(async () => {
       try {
         allCustomers = await API.customers.list();
-        renderTable(allCustomers);
+        renderAll();
       } catch(e) {
         Toast.error('データ取得エラー: ' + e.message);
       }
     });
 
+    document.getElementById('searchInput').addEventListener('input', renderAll);
+    document.getElementById('csStatusFilter').addEventListener('change', renderAll);
+
+    function switchView(view, btn) {
+      currentView = view;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderAll();
+    }
+
     function getFiltered() {
       const q  = document.getElementById('searchInput').value.toLowerCase();
-      const ma = document.getElementById('maFilter').checked;
+      const cs = document.getElementById('csStatusFilter').value;
       return allCustomers.filter(c => {
-        if (q && !c.company_name?.toLowerCase().includes(q) && !c.contact_name?.toLowerCase().includes(q)) return false;
-        if (ma && c.ma_subscribed !== 'true') return false;
+        if (q && !c.company_name?.toLowerCase().includes(q)) return false;
+        if (cs && c.cs_status !== cs) return false;
         return true;
       });
     }
 
-    document.getElementById('searchInput').addEventListener('input', () => renderTable(getFiltered()));
-    document.getElementById('maFilter').addEventListener('change', () => renderTable(getFiltered()));
+    const CHURN_COLOR = { '低': 'badge-green', '中': 'badge-yellow', '高': 'badge-red' };
+    const CS_COLOR    = { 'アクティブ': 'badge-green', 'オンボーディング中': 'badge-blue', '更新交渉中': 'badge-yellow', '解約リスク': 'badge-red', '解約済み': 'badge-gray' };
+    const UPSELL_COLOR = { '未検討': 'badge-gray', '検討中': 'badge-blue', '提案済み': 'badge-yellow', '受注': 'badge-green' };
 
-    function renderTable(customers) {
-      const tbody = document.getElementById('customersBody');
-      if (!customers.length) {
-        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-text">顧客がありません</div></div></td></tr>`;
-        return;
+    function renderAll() {
+      const list = getFiltered();
+
+      document.getElementById('tableAll').style.display   = currentView === 'all'   ? '' : 'none';
+      document.getElementById('tableSales').style.display = currentView === 'sales' ? '' : 'none';
+      document.getElementById('tableCS').style.display    = currentView === 'cs'    ? '' : 'none';
+
+      const emptyRow = (cols) => `<tr><td colspan="${cols}"><div class="empty-state"><div class="empty-state-text">顧客がありません</div></div></td></tr>`;
+
+      if (currentView === 'all') {
+        document.getElementById('bodyAll').innerHTML = list.length ? list.map(c => `
+          <tr>
+            <td><a href="/customers/detail.html?id=${c.id}" style="font-weight:600;color:var(--primary);text-decoration:none;">${c.company_name}</a></td>
+            <td>${c.industry || '—'}</td>
+            <td>${c.cs_status ? `<span class="badge ${CS_COLOR[c.cs_status]||'badge-gray'}">${c.cs_status}</span>` : '—'}</td>
+            <td>${c.contact_name || '—'}</td>
+            <td>${c.churn_risk ? `<span class="badge ${CHURN_COLOR[c.churn_risk]||'badge-gray'}">${c.churn_risk}</span>` : '—'}</td>
+            <td>${fmtDate(c.contract_date)}</td>
+            <td><a href="/customers/detail.html?id=${c.id}" class="btn btn-ghost btn-sm">詳細</a></td>
+          </tr>`).join('') : emptyRow(7);
       }
-      tbody.innerHTML = customers.map(c => `
-        <tr>
-          <td><a href="/customers/detail.html?id=${c.id}" style="font-weight:600;color:var(--primary);text-decoration:none;">${c.company_name}</a></td>
-          <td>${c.industry || '—'}</td>
-          <td>${c.contact_name || '—'}</td>
-          <td>${c.contact_email ? `<a href="mailto:${c.contact_email}" style="color:var(--info);">${c.contact_email}</a>` : '—'}</td>
-          <td>${c.phone || '—'}</td>
-          <td><span class="badge ${c.ma_subscribed === 'true' ? 'badge-green' : 'badge-gray'}">${c.ma_subscribed === 'true' ? '登録済み' : '未登録'}</span></td>
-          <td>${fmtDate(c.created_at)}</td>
-          <td><a href="/customers/detail.html?id=${c.id}" class="btn btn-ghost btn-sm">詳細</a></td>
-        </tr>
-      `).join('');
+
+      if (currentView === 'sales') {
+        document.getElementById('bodySales').innerHTML = list.length ? list.map(c => `
+          <tr>
+            <td><a href="/customers/detail.html?id=${c.id}" style="font-weight:600;color:var(--primary);text-decoration:none;">${c.company_name}</a></td>
+            <td>${c.contact_name || '—'}</td>
+            <td>${c.contract_type || '—'}</td>
+            <td>${c.contract_amount ? Number(c.contract_amount).toLocaleString() + '円' : '—'}</td>
+            <td>${c.upsell_status ? `<span class="badge ${UPSELL_COLOR[c.upsell_status]||'badge-gray'}">${c.upsell_status}</span>` : '—'}</td>
+            <td><span class="badge ${c.ma_subscribed === 'true' ? 'badge-green' : 'badge-gray'}">${c.ma_subscribed === 'true' ? 'MA登録済み' : '未登録'}</span></td>
+            <td><a href="/customers/detail.html?id=${c.id}" class="btn btn-ghost btn-sm">詳細</a></td>
+          </tr>`).join('') : emptyRow(7);
+      }
+
+      if (currentView === 'cs') {
+        document.getElementById('bodyCS').innerHTML = list.length ? list.map(c => `
+          <tr>
+            <td><a href="/customers/detail.html?id=${c.id}" style="font-weight:600;color:var(--primary);text-decoration:none;">${c.company_name}</a></td>
+            <td>${c.cs_status ? `<span class="badge ${CS_COLOR[c.cs_status]||'badge-gray'}">${c.cs_status}</span>` : '—'}</td>
+            <td>${c.onboarding_status || '—'}</td>
+            <td>${c.satisfaction_score ? c.satisfaction_score + ' / 5' : '—'}</td>
+            <td>${c.churn_risk ? `<span class="badge ${CHURN_COLOR[c.churn_risk]||'badge-gray'}">${c.churn_risk}</span>` : '—'}</td>
+            <td>${c.cs_rep || '—'}</td>
+            <td><a href="/customers/detail.html?id=${c.id}" class="btn btn-ghost btn-sm">詳細</a></td>
+          </tr>`).join('') : emptyRow(7);
+      }
     }
 
     // ===== モーダル =====
     function openNewModal() {
       document.getElementById('newModal').classList.remove('hidden');
+      document.getElementById('new_contract_date').value = new Date().toISOString().slice(0,10);
     }
 
     function closeModal() {
@@ -191,18 +297,19 @@
       try {
         const newC = await API.customers.create({
           company_name,
-          industry:       document.getElementById('new_industry').value,
-          employee_count: document.getElementById('new_employee_count').value,
-          contact_name:   document.getElementById('new_contact_name').value,
-          contact_email:  document.getElementById('new_contact_email').value,
-          phone:          document.getElementById('new_phone').value,
-          website:        document.getElementById('new_website').value,
-          address:        document.getElementById('new_address').value,
-          notes:          document.getElementById('new_notes').value,
-          ma_subscribed:  document.getElementById('new_ma_subscribed').checked ? 'true' : 'false',
+          industry:          document.getElementById('new_industry').value,
+          employee_count:    document.getElementById('new_employee_count').value,
+          contact_name:      document.getElementById('new_contact_name').value,
+          contact_email:     document.getElementById('new_contact_email').value,
+          contract_type:     document.getElementById('new_contract_type').value,
+          contract_date:     document.getElementById('new_contract_date').value,
+          cs_rep:            document.getElementById('new_cs_rep').value,
+          cs_status:         document.getElementById('new_cs_status').value,
+          onboarding_status: document.getElementById('new_onboarding_status').value,
+          ma_subscribed:     'false',
         });
         allCustomers.unshift(newC);
-        renderTable(allCustomers);
+        renderAll();
         closeModal();
         Toast.success('顧客を登録しました');
       } catch(e) {

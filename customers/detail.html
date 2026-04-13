@@ -27,6 +27,7 @@
       <div style="display:flex;align-items:center;gap:12px;">
         <a href="/customers/index.html" style="color:var(--text-muted);text-decoration:none;font-size:13px;">← 顧客一覧</a>
         <h1 class="page-title" id="pageTitle">顧客詳細</h1>
+        <span id="csStatusBadge"></span>
       </div>
       <div class="page-actions">
         <button class="btn btn-danger btn-sm" id="deleteBtn">削除</button>
@@ -37,84 +38,181 @@
     <div class="page-body">
       <div style="display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start;">
 
-        <!-- 左: 顧客情報フォーム -->
-        <div class="card">
-          <div class="card-title">顧客情報</div>
-          <div class="form-grid">
-            <div class="form-group form-full">
-              <label class="form-label">企業名 <span class="required">*</span></label>
-              <input type="text" class="form-input" id="company_name">
+        <!-- 左: タブ付きフォーム -->
+        <div>
+          <div class="tabs" style="margin-bottom:14px;">
+            <button class="tab-btn active" onclick="switchTab('base',this)">基本情報</button>
+            <button class="tab-btn"        onclick="switchTab('sales',this)">セールス</button>
+            <button class="tab-btn"        onclick="switchTab('cs',this)">CS管理</button>
+          </div>
+
+          <!-- 基本情報タブ -->
+          <div id="tab-base" class="card">
+            <div class="card-title">基本情報</div>
+            <div class="form-grid">
+              <div class="form-group form-full">
+                <label class="form-label">企業名 <span class="required">*</span></label>
+                <input type="text" class="form-input" id="company_name">
+              </div>
+              <div class="form-group">
+                <label class="form-label">業種</label>
+                <select class="form-select" id="industry">
+                  <option value="">選択</option>
+                  <option>IT・通信</option><option>製造</option><option>小売・流通</option>
+                  <option>金融・保険</option><option>医療・福祉</option><option>建設・不動産</option>
+                  <option>サービス</option><option>教育</option><option>その他</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">従業員数</label>
+                <input type="text" class="form-input" id="employee_count">
+              </div>
+              <div class="form-group">
+                <label class="form-label">電話番号</label>
+                <input type="text" class="form-input" id="phone">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Webサイト</label>
+                <input type="url" class="form-input" id="website" placeholder="https://">
+              </div>
+              <div class="form-group form-full">
+                <label class="form-label">住所</label>
+                <input type="text" class="form-input" id="address">
+              </div>
+              <div class="form-group form-full">
+                <label class="form-label">備考</label>
+                <textarea class="form-textarea" id="notes"></textarea>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">業種</label>
-              <select class="form-select" id="industry">
-                <option value="">選択</option>
-                <option>IT・通信</option><option>製造</option><option>小売・流通</option>
-                <option>金融・保険</option><option>医療・福祉</option><option>建設・不動産</option>
-                <option>サービス</option><option>教育</option><option>その他</option>
-              </select>
+          </div>
+
+          <!-- セールスタブ -->
+          <div id="tab-sales" class="card hidden">
+            <div class="card-title">セールス情報</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">担当者名（先方）</label>
+                <input type="text" class="form-input" id="contact_name">
+              </div>
+              <div class="form-group">
+                <label class="form-label">担当者メール</label>
+                <input type="email" class="form-input" id="contact_email">
+              </div>
+              <div class="form-group">
+                <label class="form-label">担当者電話</label>
+                <input type="text" class="form-input" id="contact_phone">
+              </div>
+              <div class="form-group">
+                <label class="form-label">契約種別</label>
+                <select class="form-select" id="contract_type">
+                  <option value="">選択</option>
+                  <option>フルサポ採用</option>
+                  <option>CLUTCH Agent</option>
+                  <option>その他</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">契約日</label>
+                <input type="date" class="form-input" id="contract_date">
+              </div>
+              <div class="form-group">
+                <label class="form-label">契約金額（円）</label>
+                <input type="number" class="form-input" id="contract_amount" placeholder="0">
+              </div>
+              <div class="form-group">
+                <label class="form-label">アップセル状況</label>
+                <select class="form-select" id="upsell_status">
+                  <option value="">選択</option>
+                  <option>未検討</option><option>検討中</option><option>提案済み</option><option>受注</option>
+                </select>
+              </div>
+              <div class="form-group form-full">
+                <label class="form-label">アップセルメモ</label>
+                <textarea class="form-textarea" id="upsell_notes" style="min-height:70px;"></textarea>
+              </div>
+              <div class="form-group form-full">
+                <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+                  <input type="checkbox" id="ma_subscribed">
+                  MAリスト（ステップメール対象）に追加
+                </label>
+              </div>
             </div>
-            <div class="form-group">
-              <label class="form-label">従業員数</label>
-              <input type="text" class="form-input" id="employee_count">
-            </div>
-            <div class="form-group">
-              <label class="form-label">電話番号</label>
-              <input type="text" class="form-input" id="phone">
-            </div>
-            <div class="form-group">
-              <label class="form-label">Webサイト</label>
-              <input type="url" class="form-input" id="website" placeholder="https://">
-            </div>
-            <div class="form-group form-full">
-              <label class="form-label">住所</label>
-              <input type="text" class="form-input" id="address">
-            </div>
-            <div class="form-group">
-              <label class="form-label">担当者名</label>
-              <input type="text" class="form-input" id="contact_name">
-            </div>
-            <div class="form-group">
-              <label class="form-label">担当者メール</label>
-              <input type="email" class="form-input" id="contact_email">
-            </div>
-            <div class="form-group">
-              <label class="form-label">担当者電話</label>
-              <input type="text" class="form-input" id="contact_phone">
-            </div>
-            <div class="form-group">
-              <label class="form-label" style="cursor:pointer;">
-                <input type="checkbox" id="ma_subscribed" style="margin-right:6px;">
-                MAリスト（ステップメール対象）
-              </label>
-            </div>
-            <div class="form-group form-full">
-              <label class="form-label">備考</label>
-              <textarea class="form-textarea" id="notes"></textarea>
+          </div>
+
+          <!-- CSタブ -->
+          <div id="tab-cs" class="card hidden">
+            <div class="card-title">CS管理情報</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">CS担当</label>
+                <input type="text" class="form-input" id="cs_rep">
+              </div>
+              <div class="form-group">
+                <label class="form-label">CSステータス</label>
+                <select class="form-select" id="cs_status">
+                  <option value="">選択</option>
+                  <option>オンボーディング中</option>
+                  <option>アクティブ</option>
+                  <option>更新交渉中</option>
+                  <option>解約リスク</option>
+                  <option>解約済み</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">オンボーディング進捗</label>
+                <select class="form-select" id="onboarding_status">
+                  <option value="">選択</option>
+                  <option>未開始</option><option>進行中</option><option>完了</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">オンボーディング開始日</label>
+                <input type="date" class="form-input" id="onboarding_start_date">
+              </div>
+              <div class="form-group">
+                <label class="form-label">オンボーディング完了日</label>
+                <input type="date" class="form-input" id="onboarding_end_date">
+              </div>
+              <div class="form-group">
+                <label class="form-label">満足度スコア（1〜5）</label>
+                <select class="form-select" id="satisfaction_score">
+                  <option value="">選択</option>
+                  <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">最終接点日</label>
+                <input type="date" class="form-input" id="last_contact_date">
+              </div>
+              <div class="form-group">
+                <label class="form-label">チャーンリスク</label>
+                <select class="form-select" id="churn_risk">
+                  <option value="">選択</option>
+                  <option>低</option><option>中</option><option>高</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">更新フラグ</label>
+                <select class="form-select" id="renewal_flag">
+                  <option value="">選択</option>
+                  <option>更新予定</option><option>要フォロー</option><option>解約予定</option>
+                </select>
+              </div>
+              <div class="form-group form-full">
+                <label class="form-label">サポートメモ</label>
+                <textarea class="form-textarea" id="support_notes" style="min-height:80px;"></textarea>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- 右: 関連案件・活動 -->
+        <!-- 右: 活動履歴 -->
         <div style="display:flex;flex-direction:column;gap:16px;">
-
-          <!-- 関連案件 -->
-          <div class="card">
-            <div class="card-title">
-              関連案件
-              <a id="newDealLink" href="#" class="btn btn-ghost btn-sm">+ 新規案件</a>
-            </div>
-            <div id="relatedDeals">
-              <div class="empty-state"><div class="empty-state-sub">読み込み中...</div></div>
-            </div>
-          </div>
-
-          <!-- 活動履歴 -->
           <div class="card">
             <div class="card-title">活動履歴</div>
             <div style="margin-bottom:12px;">
               <select class="form-select" id="activityType" style="margin-bottom:6px;">
-                <option>メモ</option><option>電話</option><option>訪問</option><option>メール</option>
+                <option>メモ</option><option>電話</option><option>訪問</option><option>メール</option><option>商談</option>
               </select>
               <textarea class="form-textarea" id="activityContent" placeholder="内容..." style="min-height:60px;margin-bottom:6px;"></textarea>
               <button class="btn btn-secondary btn-sm w-full" id="addActivityBtn">追加</button>
@@ -134,28 +232,44 @@
     const customerId = getParam('id');
     let customer = {};
 
+    const CS_COLOR = { 'アクティブ':'badge-green','オンボーディング中':'badge-blue','更新交渉中':'badge-yellow','解約リスク':'badge-red','解約済み':'badge-gray' };
+
+    function switchTab(tab, btn) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      ['base','sales','cs'].forEach(t => {
+        document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab);
+      });
+    }
+
     initPage(async () => {
       if (!customerId) { location.href = '/customers/index.html'; return; }
       Loading.show();
       try {
-        const [c, allDeals] = await Promise.all([
-          API.customers.get(customerId),
-          API.deals.list(),
-        ]);
-        customer = c;
-        document.getElementById('pageTitle').textContent = c.company_name;
-        document.getElementById('newDealLink').href = `/deals/detail.html?new=1`;
+        customer = await API.customers.get(customerId);
+        document.getElementById('pageTitle').textContent = customer.company_name;
+        if (customer.cs_status) {
+          document.getElementById('csStatusBadge').innerHTML = `<span class="badge ${CS_COLOR[customer.cs_status]||'badge-gray'}">${customer.cs_status}</span>`;
+        }
 
-        // フォームに値を入れる
-        ['company_name','industry','employee_count','phone','website','address','contact_name','contact_email','contact_phone','notes'].forEach(k => {
+        // 基本
+        ['company_name','industry','employee_count','phone','website','address','notes'].forEach(k => {
           const el = document.getElementById(k);
-          if (el) el.value = c[k] || '';
+          if (el) { if (el.tagName === 'SELECT') el.value = customer[k]||''; else el.value = customer[k]||''; }
         });
-        document.getElementById('ma_subscribed').checked = c.ma_subscribed === 'true';
 
-        // 関連案件
-        const related = allDeals.filter(d => d.customer_id === customerId);
-        renderRelatedDeals(related);
+        // セールス
+        ['contact_name','contact_email','contact_phone','contract_type','contract_date','contract_amount','upsell_status','upsell_notes'].forEach(k => {
+          const el = document.getElementById(k);
+          if (el) { if (el.tagName === 'SELECT') el.value = customer[k]||''; else el.value = customer[k]||''; }
+        });
+        document.getElementById('ma_subscribed').checked = customer.ma_subscribed === 'true';
+
+        // CS
+        ['cs_rep','cs_status','onboarding_status','onboarding_start_date','onboarding_end_date','satisfaction_score','last_contact_date','churn_risk','renewal_flag','support_notes'].forEach(k => {
+          const el = document.getElementById(k);
+          if (el) { if (el.tagName === 'SELECT') el.value = customer[k]||''; else el.value = customer[k]||''; }
+        });
 
         // 活動履歴
         const activities = await API.activities.listByCustomer(customerId);
@@ -168,30 +282,14 @@
       }
     });
 
-    function renderRelatedDeals(deals) {
-      const el = document.getElementById('relatedDeals');
-      if (!deals.length) {
-        el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">案件なし</div>';
-        return;
-      }
-      el.innerHTML = deals.map(d => `
-        <div style="padding:7px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-          <div>
-            <a href="/deals/detail.html?id=${d.id}" style="font-size:13px;font-weight:600;color:var(--primary);text-decoration:none;">${d.deal_name || '（無題）'}</a>
-          </div>
-          ${phaseBadge(d.phase)}
-        </div>
-      `).join('');
-    }
-
     function renderActivities(activities) {
       const el = document.getElementById('activityList');
       if (!activities?.length) {
         el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);">活動記録なし</div>';
         return;
       }
-      const typeIcon = { '電話': '📞', '訪問': '🏢', 'メール': '📧', '商談': '💼', 'メモ': '📝' };
-      el.innerHTML = activities.slice(0, 10).map(a => `
+      const typeIcon = { '電話':'📞','訪問':'🏢','メール':'📧','商談':'💼','メモ':'📝' };
+      el.innerHTML = activities.slice(0,10).map(a => `
         <div style="padding:8px 0;border-bottom:1px solid var(--border);">
           <div style="font-size:11px;color:var(--text-muted);">${typeIcon[a.type]||'📝'} ${a.type} · ${fmtDate(a.activity_date)}</div>
           <div style="font-size:13px;margin-top:2px;">${a.content}</div>
@@ -205,22 +303,24 @@
       if (!company_name) { Toast.error('企業名を入力してください'); return; }
       Loading.show();
       try {
-        await API.customers.update({
-          id: customerId,
-          company_name,
-          industry:       document.getElementById('industry').value,
-          employee_count: document.getElementById('employee_count').value,
-          phone:          document.getElementById('phone').value,
-          website:        document.getElementById('website').value,
-          address:        document.getElementById('address').value,
-          contact_name:   document.getElementById('contact_name').value,
-          contact_email:  document.getElementById('contact_email').value,
-          contact_phone:  document.getElementById('contact_phone').value,
-          notes:          document.getElementById('notes').value,
-          ma_subscribed:  document.getElementById('ma_subscribed').checked ? 'true' : 'false',
+        const data = { id: customerId, company_name };
+        ['industry','employee_count','phone','website','address','notes',
+         'contact_name','contact_email','contact_phone','contract_type','contract_date',
+         'contract_amount','upsell_status','upsell_notes',
+         'cs_rep','cs_status','onboarding_status','onboarding_start_date','onboarding_end_date',
+         'satisfaction_score','last_contact_date','churn_risk','renewal_flag','support_notes'
+        ].forEach(k => {
+          const el = document.getElementById(k);
+          if (el) data[k] = el.value;
         });
-        Toast.success('保存しました');
+        data.ma_subscribed = document.getElementById('ma_subscribed').checked ? 'true' : 'false';
+
+        await API.customers.update(data);
         document.getElementById('pageTitle').textContent = company_name;
+        if (data.cs_status) {
+          document.getElementById('csStatusBadge').innerHTML = `<span class="badge ${CS_COLOR[data.cs_status]||'badge-gray'}">${data.cs_status}</span>`;
+        }
+        Toast.success('保存しました');
       } catch(e) {
         Toast.error('保存エラー: ' + e.message);
       } finally {
@@ -248,7 +348,7 @@
           customer_id: customerId,
           type: document.getElementById('activityType').value,
           content,
-          activity_date: new Date().toISOString().slice(0, 10),
+          activity_date: new Date().toISOString().slice(0,10),
         });
         document.getElementById('activityContent').value = '';
         Toast.success('活動を追加しました');

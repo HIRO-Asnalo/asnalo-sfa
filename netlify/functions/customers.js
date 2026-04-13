@@ -13,9 +13,19 @@ const { requireAuth } = require('./_auth');
 
 const SHEET = '顧客マスタ';
 const HEADERS = [
-  'id', 'company_name', 'industry', 'address', 'phone', 'website',
-  'contact_name', 'contact_email', 'contact_phone', 'employee_count',
-  'ma_subscribed', 'notes', 'created_at', 'updated_at',
+  // 基本情報
+  'id', 'company_name', 'industry', 'address', 'phone', 'website', 'employee_count',
+  // セールス情報
+  'contact_name', 'contact_email', 'contact_phone',
+  'contract_date', 'contract_amount', 'contract_type',
+  'upsell_status', 'upsell_notes', 'ma_subscribed',
+  // CS情報
+  'cs_rep', 'cs_status', 'onboarding_status',
+  'onboarding_start_date', 'onboarding_end_date',
+  'satisfaction_score', 'last_contact_date',
+  'renewal_flag', 'churn_risk', 'support_notes',
+  // メタ
+  'tags', 'notes', 'created_at', 'updated_at',
 ];
 
 exports.handler = async (event) => {
