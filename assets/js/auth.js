@@ -38,8 +38,17 @@ const Auth = (() => {
   async function getToken() {
     if (!_user) return '';
     try {
-      return await _user.jwt();
-    } catch {
+      // jwt() は期限切れ時に自動更新してくれる
+      const t = await _user.jwt();
+      if (t) return t;
+    } catch (e) {
+      console.warn('jwt() failed, falling back to refresh:', e.message);
+    }
+    try {
+      // フォールバック: netlifyIdentity.refresh() で強制更新
+      return await netlifyIdentity.refresh();
+    } catch (e) {
+      console.warn('refresh() failed:', e.message);
       return _user?.token?.access_token || '';
     }
   }

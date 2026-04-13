@@ -6,9 +6,13 @@
 function decodeJWT(token) {
   try {
     const payload = token.split('.')[1];
-    const decoded = Buffer.from(payload, 'base64url').toString('utf-8');
+    // base64url → base64 変換（パディング補完含む）
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '=='.slice(0, (4 - base64.length % 4) % 4);
+    const decoded = Buffer.from(padded, 'base64').toString('utf-8');
     return JSON.parse(decoded);
-  } catch {
+  } catch (e) {
+    console.error('JWT decode error:', e.message);
     return null;
   }
 }
