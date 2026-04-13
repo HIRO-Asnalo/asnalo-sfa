@@ -9,6 +9,7 @@
 
 const { getRows, getRow, insertRow, updateRow, deleteRow, response } = require('./_db');
 const { requireAuth } = require('./_auth');
+const { notifyDealCreated, notifyPhaseChanged } = require('./_slack');
 
 const TABLE = 'deals';
 
@@ -34,6 +35,7 @@ exports.handler = async (event) => {
         const body = JSON.parse(event.body || '{}');
         const now = new Date().toISOString();
         const result = await insertRow(TABLE, { ...body, created_at: now, updated_at: now });
+        notifyDealCreated(result, auth.user?.email).catch(() => {});
         return response(201, result);
       }
 
@@ -41,6 +43,13 @@ exports.handler = async (event) => {
         const body = JSON.parse(event.body || '{}');
         if (!body.id) return response(400, { error: 'id が必要です' });
         const { id, ...rest } = body;
+        // フェーズ変更チェック
+        if (rest.phase) {
+          const oldDeal = await getRow(TABLE, id).catch(() => null);
+          if (oldDeal && oldDeal.phase !== rest.phase) {
+            notifyPhaseChanged({ ...oldDeal, ...rest }, oldDeal.phase, auth.user?.email).catch(() => {});
+          }
+        }
         await updateRow(TABLE, id, { ...rest, updated_at: new Date().toISOString() });
         return response(200, { success: true });
       }
