@@ -148,11 +148,16 @@
         </div>
         <div class="form-group">
           <label class="form-label">件名 <span style="color:var(--danger)">*</span></label>
-          <input type="text" class="form-input" id="stepSubject" required placeholder="メールの件名">
+          <input type="text" class="form-input" id="stepSubject" required placeholder="例: {{会社名}} 様、先日はありがとうございました">
         </div>
         <div class="form-group">
           <label class="form-label">本文 <span style="color:var(--danger)">*</span></label>
           <textarea class="form-input" id="stepBody" required rows="10" placeholder="メール本文（プレーンテキスト）"></textarea>
+          <div style="margin-top:6px;font-size:11px;color:var(--text-muted);">
+            差し込み変数: <code style="background:#f1f5f9;padding:1px 4px;border-radius:3px;">{{顧客名}}</code>
+            <code style="background:#f1f5f9;padding:1px 4px;border-radius:3px;">{{会社名}}</code>
+            <code style="background:#f1f5f9;padding:1px 4px;border-radius:3px;">{{役職}}</code>
+          </div>
         </div>
         <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
           <button type="button" class="btn btn-ghost" id="stepModalClose">キャンセル</button>
@@ -346,12 +351,65 @@
       const el = document.getElementById('logContent');
       if (!el) return;
       try {
-        // ma_sends を API 経由で取得（現状は直接クエリ手段がないため customers から一旦表示）
-        // バックエンドに /ma-logs?sequence_id= が必要だが、暫定で sendPending → status確認フローに
-        el.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-muted);">配信ログを取得するには「未送信を配信」ボタンで送信後に確認できます。<br><small>※ 配信ログ専用API（/ma-logs）を追加すると詳細表示が可能になります。</small></div>`;
+        const { stats, logs } = await API.ma.logs(seqId);
+
+        const statHtml = `
+          <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+            ${statCard('合計', stats.total, '#64748b')}
+            ${statCard('送信済み', stats.sent, '#16a34a')}
+            ${statCard('開封', stats.opened, '#2563eb')}
+            ${statCard('未送信', stats.pending, '#d97706')}
+            ${statCard('エラー', stats.errors, '#dc2626')}
+          </div>
+        `;
+
+        if (!logs.length) {
+          el.innerHTML = statHtml + `<div style="text-align:center;padding:24px;color:var(--text-muted);">配信ログがありません</div>`;
+          return;
+        }
+
+        const rows = logs.map(s => {
+          let statusBadge;
+          if (s.status === '送信済み' && s.opened_at) statusBadge = `<span class="badge badge-opened">開封済み</span>`;
+          else if (s.status === '送信済み') statusBadge = `<span class="badge badge-sent">送信済み</span>`;
+          else if (s.status === 'エラー')  statusBadge = `<span class="badge badge-error">エラー</span>`;
+          else                              statusBadge = `<span class="badge badge-unsent">未送信</span>`;
+
+          return `
+            <tr>
+              <td>${s.email || '—'}</td>
+              <td>${statusBadge}</td>
+              <td>${fmtDatetime(s.scheduled_at)}</td>
+              <td>${s.sent_at ? fmtDatetime(s.sent_at) : '—'}</td>
+              <td>${s.opened_at ? fmtDatetime(s.opened_at) : '—'}</td>
+            </tr>
+          `;
+        }).join('');
+
+        el.innerHTML = statHtml + `
+          <div class="table-wrap">
+            <table class="log-table">
+              <thead><tr>
+                <th>メールアドレス</th>
+                <th>ステータス</th>
+                <th>送信予定日</th>
+                <th>送信日時</th>
+                <th>開封日時</th>
+              </tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        `;
       } catch(e) {
-        el.innerHTML = `<div style="color:var(--danger)">ログ取得エラー: ${e.message}</div>`;
+        el.innerHTML = `<div style="color:var(--danger);padding:16px;">ログ取得エラー: ${e.message}</div>`;
       }
+    }
+
+    function statCard(label, value, color) {
+      return `<div style="background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 20px;text-align:center;min-width:80px;">
+        <div style="font-size:22px;font-weight:700;color:${color};">${value}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${label}</div>
+      </div>`;
     }
 
     // ===== 未送信を配信 =====

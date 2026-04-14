@@ -68,5 +68,20 @@ const API = (() => {
     generate: (type, data) => request('POST', '/ai-generate', { type, data }),
   };
 
-  return { deals, customers, fields, activities, dashboard, ai };
+  // ===== MA =====
+  const ma = {
+    logs:           (sequence_id)   => request('GET',    `/ma-logs?sequence_id=${sequence_id}`),
+    listSequences:  ()              => request('GET',    '/ma-sequences'),
+    getSequence:    (id)            => request('GET',    `/ma-sequences?id=${id}`),
+    createSequence: (data)          => request('POST',   '/ma-sequences', data),
+    updateSequence: (data)          => request('PUT',    '/ma-sequences', data),
+    deleteSequence: (id)            => request('DELETE', `/ma-sequences?id=${id}`),
+    createStep:     (data)          => request('POST',   '/ma-steps', data),
+    updateStep:     (data)          => request('PUT',    '/ma-steps', data),
+    deleteStep:     (id)            => request('DELETE', `/ma-steps?id=${id}`),
+    enroll:         (sequence_id, customer_id) => request('POST', '/ma-send', { enroll: true, sequence_id, customer_id }),
+    sendPending:    ()              => request('POST',   '/ma-send', {}),
+  };
+
+  return { deals, customers, fields, activities, dashboard, ai, ma };
 })();

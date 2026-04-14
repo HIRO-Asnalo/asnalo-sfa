@@ -107,16 +107,31 @@ exports.handler = async (event) => {
     const pending = await getRows('ma_sends', { status: '未送信' });
     const toSend = pending.filter(s => s.scheduled_at && new Date(s.scheduled_at) <= now && s.email);
 
+    // ===== 差し込み変数置換 =====
+    function applyVars(text, customer) {
+      if (!text || !customer) return text;
+      return text
+        .replace(/\{\{顧客名\}\}/g,   customer.contact_name  || '')
+        .replace(/\{\{会社名\}\}/g,   customer.company_name  || '')
+        .replace(/\{\{担当者名\}\}/g, customer.contact_name  || '')
+        .replace(/\{\{役職\}\}/g,     customer.contact_title || '')
+        .replace(/\{\{メール\}\}/g,   customer.contact_email || '');
+    }
+
     const results = [];
     for (const send of toSend) {
       const step = await getRow('ma_steps', send.step_id).catch(() => null);
       if (!step) continue;
 
+      const customer = await getRow('customers', send.customer_id).catch(() => ({}));
+      const subject  = applyVars(step.subject, customer);
+      const body     = applyVars(step.body,    customer);
+
       const res = await sendEmail({
         to: send.email,
         from: 'アスナロ <noreply@asnalo.com>',
-        subject: step.subject,
-        body: step.body,
+        subject,
+        body,
         trackingId: send.id,
       });
 
