@@ -140,67 +140,176 @@
           </div>
 
           <!-- CSタブ -->
-          <div id="tab-cs" class="card hidden">
-            <div class="card-title">CS管理情報</div>
-            <div class="form-grid">
-              <div class="form-group">
-                <label class="form-label">CS担当</label>
-                <input type="text" class="form-input" id="cs_rep">
+          <div id="tab-cs" class="hidden">
+
+            <!-- 契約情報 -->
+            <div class="card" style="margin-bottom:14px;">
+              <div class="card-title">契約情報</div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">区分</label>
+                  <select class="form-select" id="segment">
+                    <option value="">選択</option>
+                    <option>新規</option><option>継続</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">稼働状況</label>
+                  <select class="form-select" id="operation_status">
+                    <option value="">選択</option>
+                    <option>稼働中</option><option>稼働停止</option><option>これから</option><option>稼働なし</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">契約サービス</label>
+                  <select class="form-select" id="service_name">
+                    <option value="">選択</option>
+                    <option>フルサポ採用</option><option>DR運用代行</option><option>CLUTCH Agent</option><option>その他</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">CS担当</label>
+                  <input type="text" class="form-input" id="cs_rep">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">契約開始日</label>
+                  <input type="date" class="form-input" id="contract_start_date">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">契約終了日</label>
+                  <input type="date" class="form-input" id="contract_end_date">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">決算月</label>
+                  <select class="form-select" id="fiscal_month">
+                    <option value="">選択</option>
+                    <option>1月</option><option>2月</option><option>3月</option><option>4月</option>
+                    <option>5月</option><option>6月</option><option>7月</option><option>8月</option>
+                    <option>9月</option><option>10月</option><option>11月</option><option>12月</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">CSステータス</label>
+                  <select class="form-select" id="cs_status">
+                    <option value="">選択</option>
+                    <option>オンボーディング中</option><option>アクティブ</option>
+                    <option>更新交渉中</option><option>解約リスク</option><option>解約済み</option>
+                  </select>
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">CSステータス</label>
-                <select class="form-select" id="cs_status">
-                  <option value="">選択</option>
-                  <option>オンボーディング中</option>
-                  <option>アクティブ</option>
-                  <option>更新交渉中</option>
-                  <option>解約リスク</option>
-                  <option>解約済み</option>
-                </select>
+            </div>
+
+            <!-- 顧客コンディション -->
+            <div class="card" style="margin-bottom:14px;">
+              <div class="card-title">顧客コンディション</div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">キーパーソン名</label>
+                  <input type="text" class="form-input" id="key_person">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">役割・人物像</label>
+                  <input type="text" class="form-input" id="key_person_role">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">キーパーソンニーズ</label>
+                  <select class="form-select" id="key_person_needs">
+                    <option value="">選択</option>
+                    <option>安定感・安心感</option><option>成長</option><option>貢献</option>
+                    <option>繋がり</option><option>不安定感・不確実感</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">関係性</label>
+                  <select class="form-select" id="relationship">
+                    <option value="">選択</option>
+                    <option>とても良い</option><option>良い</option><option>どちらとも言えない</option><option>悪い</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">成果</label>
+                  <select class="form-select" id="performance">
+                    <option value="">選択</option>
+                    <option>とても良い</option><option>良い</option><option>どちらとも言えない</option><option>悪い</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">最新接触日</label>
+                  <input type="date" class="form-input" id="last_contact_date">
+                </div>
+                <div class="form-group form-full">
+                  <label class="form-label">コンディション詳細</label>
+                  <textarea class="form-textarea" id="condition_detail" style="min-height:80px;"></textarea>
+                </div>
+                <div class="form-group form-full">
+                  <label class="form-label">最新接触内容</label>
+                  <textarea class="form-textarea" id="last_contact_content" style="min-height:60px;"></textarea>
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">オンボーディング進捗</label>
-                <select class="form-select" id="onboarding_status">
-                  <option value="">選択</option>
-                  <option>未開始</option><option>進行中</option><option>完了</option>
-                </select>
+            </div>
+
+            <!-- ネクストアクション -->
+            <div class="card" style="margin-bottom:14px;">
+              <div class="card-title">Closed won に向けたアクション</div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">来期提案時期</label>
+                  <input type="text" class="form-input" id="next_proposal_timing" placeholder="例: 3月">
+                </div>
+                <div class="form-group form-full">
+                  <label class="form-label">来期提案内容</label>
+                  <textarea class="form-textarea" id="next_proposal_content" style="min-height:60px;"></textarea>
+                </div>
+                <div class="form-group form-full">
+                  <label class="form-label">アップセルに向けたストーリー</label>
+                  <textarea class="form-textarea" id="upsell_story" style="min-height:60px;"></textarea>
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">オンボーディング開始日</label>
-                <input type="date" class="form-input" id="onboarding_start_date">
+              <!-- アクション①〜③ -->
+              <div style="margin-top:14px;">
+                <div style="font-size:12px;font-weight:700;color:var(--primary);margin-bottom:10px;">アクション①</div>
+                <div class="form-grid">
+                  <div class="form-group"><label class="form-label">項目</label><input type="text" class="form-input" id="action1_item"></div>
+                  <div class="form-group"><label class="form-label">期日</label><input type="date" class="form-input" id="action1_due"></div>
+                  <div class="form-group form-full"><label class="form-label">詳細</label><textarea class="form-textarea" id="action1_detail" style="min-height:55px;"></textarea></div>
+                </div>
+                <div style="font-size:12px;font-weight:700;color:var(--primary);margin:10px 0;">アクション②</div>
+                <div class="form-grid">
+                  <div class="form-group"><label class="form-label">項目</label><input type="text" class="form-input" id="action2_item"></div>
+                  <div class="form-group"><label class="form-label">期日</label><input type="date" class="form-input" id="action2_due"></div>
+                  <div class="form-group form-full"><label class="form-label">詳細</label><textarea class="form-textarea" id="action2_detail" style="min-height:55px;"></textarea></div>
+                </div>
+                <div style="font-size:12px;font-weight:700;color:var(--primary);margin:10px 0;">アクション③</div>
+                <div class="form-grid">
+                  <div class="form-group"><label class="form-label">項目</label><input type="text" class="form-input" id="action3_item"></div>
+                  <div class="form-group"><label class="form-label">期日</label><input type="date" class="form-input" id="action3_due"></div>
+                  <div class="form-group form-full"><label class="form-label">詳細</label><textarea class="form-textarea" id="action3_detail" style="min-height:55px;"></textarea></div>
+                </div>
               </div>
-              <div class="form-group">
-                <label class="form-label">オンボーディング完了日</label>
-                <input type="date" class="form-input" id="onboarding_end_date">
-              </div>
-              <div class="form-group">
-                <label class="form-label">満足度スコア（1〜5）</label>
-                <select class="form-select" id="satisfaction_score">
-                  <option value="">選択</option>
-                  <option>1</option><option>2</option><option>3</option><option>4</option><option>5</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">最終接点日</label>
-                <input type="date" class="form-input" id="last_contact_date">
-              </div>
-              <div class="form-group">
-                <label class="form-label">チャーンリスク</label>
-                <select class="form-select" id="churn_risk">
-                  <option value="">選択</option>
-                  <option>低</option><option>中</option><option>高</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label class="form-label">更新フラグ</label>
-                <select class="form-select" id="renewal_flag">
-                  <option value="">選択</option>
-                  <option>更新予定</option><option>要フォロー</option><option>解約予定</option>
-                </select>
-              </div>
-              <div class="form-group form-full">
-                <label class="form-label">サポートメモ</label>
-                <textarea class="form-textarea" id="support_notes" style="min-height:80px;"></textarea>
+            </div>
+
+            <!-- その他CS -->
+            <div class="card">
+              <div class="card-title">その他</div>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">チャーンリスク</label>
+                  <select class="form-select" id="churn_risk">
+                    <option value="">選択</option>
+                    <option>低</option><option>中</option><option>高</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">更新フラグ</label>
+                  <select class="form-select" id="renewal_flag">
+                    <option value="">選択</option>
+                    <option>更新予定</option><option>要フォロー</option><option>解約予定</option>
+                  </select>
+                </div>
+                <div class="form-group form-full">
+                  <label class="form-label">サポートメモ</label>
+                  <textarea class="form-textarea" id="support_notes" style="min-height:70px;"></textarea>
+                </div>
               </div>
             </div>
           </div>
@@ -266,7 +375,13 @@
         document.getElementById('ma_subscribed').checked = customer.ma_subscribed === 'true';
 
         // CS
-        ['cs_rep','cs_status','onboarding_status','onboarding_start_date','onboarding_end_date','satisfaction_score','last_contact_date','churn_risk','renewal_flag','support_notes'].forEach(k => {
+        ['cs_rep','cs_status','segment','operation_status','service_name','contract_start_date','contract_end_date',
+         'fiscal_month','key_person','key_person_role','key_person_needs','relationship','performance',
+         'last_contact_date','condition_detail','last_contact_content',
+         'next_proposal_timing','next_proposal_content','upsell_story',
+         'action1_item','action1_detail','action1_due','action2_item','action2_detail','action2_due',
+         'action3_item','action3_detail','action3_due','churn_risk','renewal_flag','support_notes'
+        ].forEach(k => {
           const el = document.getElementById(k);
           if (el) { if (el.tagName === 'SELECT') el.value = customer[k]||''; else el.value = customer[k]||''; }
         });
@@ -307,8 +422,12 @@
         ['industry','employee_count','phone','website','address','notes',
          'contact_name','contact_email','contact_phone','contract_type','contract_date',
          'contract_amount','upsell_status','upsell_notes',
-         'cs_rep','cs_status','onboarding_status','onboarding_start_date','onboarding_end_date',
-         'satisfaction_score','last_contact_date','churn_risk','renewal_flag','support_notes'
+         'cs_rep','cs_status','segment','operation_status','service_name','contract_start_date','contract_end_date',
+         'fiscal_month','key_person','key_person_role','key_person_needs','relationship','performance',
+         'last_contact_date','condition_detail','last_contact_content',
+         'next_proposal_timing','next_proposal_content','upsell_story',
+         'action1_item','action1_detail','action1_due','action2_item','action2_detail','action2_due',
+         'action3_item','action3_detail','action3_due','churn_risk','renewal_flag','support_notes'
         ].forEach(k => {
           const el = document.getElementById(k);
           if (el) data[k] = el.value;
