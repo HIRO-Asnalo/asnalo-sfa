@@ -7,6 +7,13 @@ const Auth = (() => {
   let _user = null;
 
   function init(onLogin, onLogout) {
+    // ローカル開発時は認証をバイパス
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+      _user = { email: 'dev@local', token: { access_token: 'dev-token' }, user_metadata: { full_name: '開発ユーザー' } };
+      setTimeout(() => onLogin?.(_user), 0);
+      return;
+    }
+
     if (!window.netlifyIdentity) return;
     netlifyIdentity.on('init', user => {
       _user = user;
@@ -37,6 +44,7 @@ const Auth = (() => {
 
   async function getToken() {
     if (!_user) return '';
+    if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') return 'dev-token';
     try {
       // jwt() は期限切れ時に自動更新してくれる
       const t = await _user.jwt();

@@ -2,6 +2,13 @@
   functions = "netlify/functions"
   publish = "."
 
+[dev]
+  framework = "#static"
+  targetPort = 8888
+
+[dev.environment]
+  NETLIFY_DEV = "true"
+
 [functions]
   node_bundler = "nft"
 

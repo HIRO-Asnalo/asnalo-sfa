@@ -37,6 +37,11 @@ function getUser(event) {
  * 未認証の場合は 401 を返す
  */
 function requireAuth(event) {
+  // ローカル開発時は認証をバイパス
+  if (process.env.NETLIFY_DEV === 'true' || process.env.NODE_ENV === 'development') {
+    return { error: false, user: { email: 'dev@local', sub: 'dev' } };
+  }
+
   const authHeader = event.headers.authorization || event.headers.Authorization;
   if (!authHeader) {
     console.error('[auth] no Authorization header');
