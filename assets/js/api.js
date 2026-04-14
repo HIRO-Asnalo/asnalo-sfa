@@ -63,5 +63,10 @@ const API = (() => {
     stats: () => request('GET', '/dashboard'),
   };
 
-  return { deals, customers, fields, activities, dashboard };
+  // ===== AI生成 =====
+  const ai = {
+    generate: (type, data) => request('POST', '/ai-generate', { type, data }),
+  };
+
+  return { deals, customers, fields, activities, dashboard, ai };
 })();

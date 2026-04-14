@@ -30,6 +30,8 @@
         <span id="phaseBadgeHeader"></span>
       </div>
       <div class="page-actions">
+        <button class="btn btn-ghost btn-sm" id="aiProposalBtn" style="display:none;">🤖 提案を生成</button>
+        <button class="btn btn-ghost btn-sm" id="aiActionBtn" style="display:none;">🤖 アクション提案</button>
         <button class="btn btn-danger btn-sm" id="deleteBtn" style="display:none;">削除</button>
         <button class="btn btn-primary" id="saveBtn">保存</button>
       </div>
@@ -111,6 +113,8 @@
           document.getElementById('pageTitle').textContent = deal.deal_name || '（無題）';
           document.getElementById('phaseBadgeHeader').innerHTML = phaseBadge(deal.phase);
           document.getElementById('deleteBtn').style.display = 'inline-flex';
+          document.getElementById('aiProposalBtn').style.display = 'inline-flex';
+          document.getElementById('aiActionBtn').style.display = 'inline-flex';
           document.getElementById('deal_company_name').value = deal.company_name || '';
           loadActivities();
         } else {
@@ -308,6 +312,48 @@
         Toast.error('エラー: ' + e.message);
       }
     });
+    // ===== AI モーダル =====
+    function showAiModal(title, text) {
+      const existing = document.getElementById('aiModal');
+      if (existing) existing.remove();
+
+      const modal = document.createElement('div');
+      modal.id = 'aiModal';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;';
+      modal.innerHTML = `
+        <div style="background:#fff;border-radius:14px;width:100%;max-width:700px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+          <div style="padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-size:15px;font-weight:800;color:var(--primary);">🤖 ${title}</div>
+            <button onclick="document.getElementById('aiModal').remove()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text-muted);">×</button>
+          </div>
+          <div style="padding:24px;overflow-y:auto;flex:1;">
+            <div id="aiModalContent" style="font-size:13.5px;line-height:1.8;white-space:pre-wrap;color:var(--text);">${text}</div>
+          </div>
+          <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;">
+            <button onclick="navigator.clipboard.writeText(document.getElementById('aiModalContent').textContent).then(()=>Toast.success('コピーしました'))" class="btn btn-secondary btn-sm">コピー</button>
+            <button onclick="document.getElementById('aiModal').remove()" class="btn btn-primary btn-sm">閉じる</button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+      modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    }
+
+    async function runAi(type, title) {
+      const data = { ...deal, ...collectFormData() };
+      data.company_name = document.getElementById('deal_company_name').value.trim();
+      Loading.show();
+      try {
+        const res = await API.ai.generate(type, data);
+        showAiModal(title, res.text);
+      } catch(e) {
+        Toast.error('AI生成エラー: ' + e.message);
+      } finally {
+        Loading.hide();
+      }
+    }
+
+    document.getElementById('aiProposalBtn').addEventListener('click', () => runAi('deal_proposal', '提案内容を生成'));
+    document.getElementById('aiActionBtn').addEventListener('click',   () => runAi('deal_action',   'ネクストアクションを提案'));
   </script>
 </body>
 </html>
