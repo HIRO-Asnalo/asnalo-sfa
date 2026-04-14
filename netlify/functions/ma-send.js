@@ -48,8 +48,16 @@ function sendEmail({ to, from, subject, body, trackingId }) {
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') return response(204, {});
-  const auth = requireAuth(event);
-  if (auth.error) return auth;
+
+  // CRON_SECRET による自動配信バイパス（GASからの定期実行用）
+  const cronSecret = process.env.CRON_SECRET;
+  const cronHeader = event.headers?.['x-cron-secret'];
+  const isCron = cronSecret && cronHeader === cronSecret;
+
+  if (!isCron) {
+    const auth = requireAuth(event);
+    if (auth.error) return auth;
+  }
 
   if (event.httpMethod !== 'POST') return response(405, { error: 'Method Not Allowed' });
 
