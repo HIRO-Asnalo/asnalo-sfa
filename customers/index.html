@@ -29,6 +29,10 @@
         <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">契約済みクライアントのCRM管理</div>
       </div>
       <div class="page-actions">
+        <button class="btn btn-ghost" onclick="openImportModal()">
+          <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          CSV取込
+        </button>
         <button class="btn btn-ghost" onclick="exportCSV()">
           <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           CSV出力
@@ -115,6 +119,23 @@
       </div>
     </div>
   </main>
+
+  <!-- CSV インポートモーダル -->
+  <div id="importModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:10px;padding:28px;width:500px;max-width:95vw;">
+      <h2 style="font-size:16px;font-weight:700;margin-bottom:8px;">顧客CSVインポート</h2>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">
+        1行目をヘッダー行として読み込みます。<br>
+        対応列: <code>会社名, 担当者名, 役職, メール, 電話</code>
+      </p>
+      <input type="file" id="importFile" accept=".csv" style="margin-bottom:16px;font-size:13px;">
+      <div id="importPreview" style="margin-bottom:16px;"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="closeImportModal()">キャンセル</button>
+        <button class="btn btn-primary" id="importConfirmBtn" onclick="confirmImport()" disabled>取り込む</button>
+      </div>
+    </div>
+  </div>
 
   <!-- 新規顧客モーダル -->
   <div class="modal-overlay hidden" id="newModal">
@@ -319,6 +340,89 @@
       } catch(e) {
         Toast.error('登録エラー: ' + e.message);
       }
+    }
+
+    // ===== CSV インポート =====
+    let importData = [];
+
+    function openImportModal() {
+      document.getElementById('importModal').style.display = 'flex';
+      document.getElementById('importFile').value = '';
+      document.getElementById('importPreview').innerHTML = '';
+      document.getElementById('importConfirmBtn').disabled = true;
+      importData = [];
+    }
+    function closeImportModal() {
+      document.getElementById('importModal').style.display = 'none';
+    }
+
+    document.getElementById('importFile').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        const text = ev.target.result.replace(/^\uFEFF/, '');
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        if (lines.length < 2) { document.getElementById('importPreview').innerHTML = '<p style="color:var(--danger);font-size:12px;">データ行がありません</p>'; return; }
+
+        const parseRow = (line) => {
+          const result = []; let cur = ''; let inQ = false;
+          for (const ch of line) {
+            if (ch === '"') { inQ = !inQ; }
+            else if (ch === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+            else { cur += ch; }
+          }
+          result.push(cur.trim());
+          return result;
+        };
+
+        const headers = parseRow(lines[0]);
+        const COL = {
+          company_name:  ['会社名','company_name'],
+          contact_name:  ['担当者名','担当者','contact_name'],
+          contact_title: ['役職','contact_title'],
+          contact_email: ['メール','メールアドレス','contact_email'],
+          contact_phone: ['電話','電話番号','contact_phone'],
+        };
+
+        importData = lines.slice(1).map(line => {
+          const cols = parseRow(line);
+          const row = {};
+          for (const [key, names] of Object.entries(COL)) {
+            const idx = headers.findIndex(h => names.includes(h.replace(/"/g,'')));
+            if (idx >= 0) row[key] = (cols[idx] || '').replace(/"/g,'');
+          }
+          return row;
+        }).filter(r => r.company_name);
+
+        const preview = importData.slice(0, 5).map(r =>
+          `<tr><td>${r.company_name||''}</td><td>${r.contact_name||''}</td><td>${r.contact_email||''}</td></tr>`
+        ).join('');
+        document.getElementById('importPreview').innerHTML = `
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">${importData.length}件を取り込みます（プレビュー: 最大5件）</p>
+          <table style="width:100%;font-size:12px;border-collapse:collapse;">
+            <thead><tr style="background:#f8fafc;"><th style="padding:4px 8px;text-align:left;">会社名</th><th style="padding:4px 8px;text-align:left;">担当者名</th><th style="padding:4px 8px;text-align:left;">メール</th></tr></thead>
+            <tbody>${preview}</tbody>
+          </table>`;
+        document.getElementById('importConfirmBtn').disabled = importData.length === 0;
+      };
+      reader.readAsText(file, 'UTF-8');
+    });
+
+    async function confirmImport() {
+      if (!importData.length) return;
+      document.getElementById('importConfirmBtn').disabled = true;
+      Loading.show();
+      let ok = 0, ng = 0;
+      for (const row of importData) {
+        try { await API.customers.create(row); ok++; }
+        catch(e) { ng++; }
+      }
+      Loading.hide();
+      closeImportModal();
+      Toast.success(`${ok}件取り込み完了${ng ? `（${ng}件エラー）` : ''}`);
+      allCustomers = await API.customers.list();
+      renderAll();
     }
 
     // ===== CSV エクスポート =====

@@ -34,6 +34,10 @@
             <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
         </div>
+        <button class="btn btn-ghost" onclick="openImportModal()">
+          <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          CSV取込
+        </button>
         <button class="btn btn-ghost" id="btnExport" onclick="exportCSV()">
           <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           CSV出力
@@ -89,6 +93,23 @@
 
     </div>
   </main>
+
+  <!-- CSV インポートモーダル -->
+  <div id="importModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:10px;padding:28px;width:500px;max-width:95vw;">
+      <h2 style="font-size:16px;font-weight:700;margin-bottom:8px;">案件CSVインポート</h2>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">
+        1行目をヘッダー行として読み込みます。<br>
+        対応列: <code>案件名, 企業名, フェーズ, 担当者, 受注予定日, 見込み金額</code>
+      </p>
+      <input type="file" id="importFile" accept=".csv" style="margin-bottom:16px;font-size:13px;">
+      <div id="importPreview" style="margin-bottom:16px;"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="closeImportModal()">キャンセル</button>
+        <button class="btn btn-primary" id="importConfirmBtn" onclick="confirmImport()" disabled>取り込む</button>
+      </div>
+    </div>
+  </div>
 
   <script src="/assets/js/auth.js"></script>
   <script src="/assets/js/api.js"></script>
@@ -198,7 +219,10 @@
             <span>${d.assigned_user || '—'}</span>
             <span>${days !== null ? days + '日前' : ''}</span>
           </div>
-          ${d.expected_close_date ? `<div style="margin-top:6px;font-size:11px;color:var(--text-muted);">受注予定: ${fmtDate(d.expected_close_date)}</div>` : ''}
+          <div style="display:flex;justify-content:space-between;margin-top:6px;">
+            ${d.expected_close_date ? `<span style="font-size:11px;color:var(--text-muted);">受注予定: ${fmtDate(d.expected_close_date)}</span>` : '<span></span>'}
+            ${d.expected_amount ? `<span style="font-size:12px;font-weight:700;color:var(--primary);">¥${Number(d.expected_amount).toLocaleString()}</span>` : ''}
+          </div>
         </div>
       `;
     }
@@ -232,10 +256,11 @@
     // ===== CSV エクスポート =====
     function exportCSV() {
       if (!allDeals.length) { Toast.error('エクスポートするデータがありません'); return; }
-      const headers = ['案件名','企業名','フェーズ','担当者','受注予定日','作成日','更新日'];
+      const headers = ['案件名','企業名','フェーズ','担当者','受注予定日','見込み金額','作成日','更新日'];
       const rows = allDeals.map(d => [
         d.deal_name || '', d.company_name || '', d.phase || '',
         d.assigned_user || '', d.expected_close_date || '',
+        d.expected_amount || '',
         (d.created_at || '').slice(0,10), (d.updated_at || '').slice(0,10),
       ]);
       downloadCSV('案件一覧.csv', headers, rows);
@@ -252,6 +277,95 @@
       a.download = filename;
       a.click();
       URL.revokeObjectURL(a.href);
+    }
+
+    // ===== CSV インポート =====
+    let importData = [];
+
+    function openImportModal() {
+      document.getElementById('importModal').style.display = 'flex';
+      document.getElementById('importFile').value = '';
+      document.getElementById('importPreview').innerHTML = '';
+      document.getElementById('importConfirmBtn').disabled = true;
+      importData = [];
+    }
+
+    function closeImportModal() {
+      document.getElementById('importModal').style.display = 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('importFile').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          const text = ev.target.result.replace(/^\uFEFF/, '');
+          const lines = text.split(/\r?\n/).filter(l => l.trim());
+          if (lines.length < 2) { document.getElementById('importPreview').innerHTML = '<p style="color:var(--danger);font-size:12px;">データ行がありません</p>'; return; }
+
+          const parseRow = (line) => {
+            const result = []; let cur = ''; let inQ = false;
+            for (const ch of line) {
+              if (ch === '"') { inQ = !inQ; }
+              else if (ch === ',' && !inQ) { result.push(cur.trim()); cur = ''; }
+              else { cur += ch; }
+            }
+            result.push(cur.trim());
+            return result;
+          };
+
+          const headers = parseRow(lines[0]);
+          const COL = {
+            deal_name:           ['案件名','deal_name'],
+            company_name:        ['企業名','company_name'],
+            phase:               ['フェーズ','phase'],
+            assigned_user:       ['担当者','assigned_user'],
+            expected_close_date: ['受注予定日','expected_close_date'],
+            expected_amount:     ['見込み金額','expected_amount'],
+          };
+
+          importData = lines.slice(1).map(line => {
+            const cols = parseRow(line);
+            const row = {};
+            for (const [key, names] of Object.entries(COL)) {
+              const idx = headers.findIndex(h => names.includes(h.replace(/"/g,'')));
+              if (idx >= 0) row[key] = (cols[idx] || '').replace(/"/g,'');
+            }
+            return row;
+          }).filter(r => r.deal_name || r.company_name);
+
+          const preview = importData.slice(0, 5).map(r =>
+            `<tr><td>${r.deal_name||''}</td><td>${r.company_name||''}</td><td>${r.phase||''}</td><td>${r.expected_amount ? '¥'+Number(r.expected_amount).toLocaleString() : ''}</td></tr>`
+          ).join('');
+          document.getElementById('importPreview').innerHTML = `
+            <p style="font-size:12px;color:var(--text-muted);margin-bottom:6px;">${importData.length}件を取り込みます（プレビュー: 最大5件）</p>
+            <table style="width:100%;font-size:12px;border-collapse:collapse;">
+              <thead><tr style="background:#f8fafc;"><th style="padding:4px 8px;text-align:left;">案件名</th><th style="padding:4px 8px;text-align:left;">企業名</th><th style="padding:4px 8px;text-align:left;">フェーズ</th><th style="padding:4px 8px;text-align:right;">見込み金額</th></tr></thead>
+              <tbody>${preview}</tbody>
+            </table>`;
+          document.getElementById('importConfirmBtn').disabled = importData.length === 0;
+        };
+        reader.readAsText(file, 'UTF-8');
+      });
+    });
+
+    async function confirmImport() {
+      if (!importData.length) return;
+      document.getElementById('importConfirmBtn').disabled = true;
+      Loading.show();
+      let ok = 0, ng = 0;
+      for (const row of importData) {
+        try {
+          await API.deals.create(row);
+          ok++;
+        } catch(e) { ng++; }
+      }
+      Loading.hide();
+      closeImportModal();
+      Toast.success(`${ok}件取り込み完了${ng ? `（${ng}件エラー）` : ''}`);
+      allDeals = await API.deals.list();
+      renderCurrentView();
     }
   </script>
 </body>

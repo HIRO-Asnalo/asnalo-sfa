@@ -44,6 +44,16 @@ exports.handler = async (event) => {
       phaseCount[p] = (phaseCount[p] || 0) + 1;
     });
 
+    // パイプライン金額（フェーズ別・稼働案件のみ）
+    const pipelineAmount = {};
+    let totalPipelineAmount = 0;
+    activeDeals.forEach(d => {
+      const p = d.phase || '未設定';
+      const amt = Number(d.expected_amount) || 0;
+      pipelineAmount[p] = (pipelineAmount[p] || 0) + amt;
+      totalPipelineAmount += amt;
+    });
+
     // 7日以上未更新の稼働案件
     const staleThreshold = new Date(Date.now() - 7 * 86400000);
     const staleDeals = activeDeals.filter(d =>
@@ -83,6 +93,8 @@ exports.handler = async (event) => {
         opened:     maOpened,
         open_rate:  maOpenRate,
       },
+      pipeline_amount:    pipelineAmount,
+      total_pipeline:     totalPipelineAmount,
       phase_count:        phaseCount,
       recent_deals:       recentDeals,
       recent_activities:  recentActivities,

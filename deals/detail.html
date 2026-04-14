@@ -45,9 +45,15 @@
           <!-- 企業名（顧客登録不要・直入力） -->
           <div class="card" style="margin-bottom:16px;">
             <div class="card-title">企業情報</div>
-            <div class="form-group">
-              <label class="form-label">企業名 <span class="required">*</span></label>
-              <input type="text" class="form-input" id="deal_company_name" placeholder="株式会社〇〇">
+            <div style="display:grid;grid-template-columns:1fr 200px;gap:12px;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">企業名 <span class="required">*</span></label>
+                <input type="text" class="form-input" id="deal_company_name" placeholder="株式会社〇〇">
+              </div>
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label">見込み金額（円）</label>
+                <input type="number" class="form-input" id="deal_expected_amount" placeholder="0" min="0" step="1000">
+              </div>
             </div>
           </div>
 
@@ -116,6 +122,7 @@
           document.getElementById('aiProposalBtn').style.display = 'inline-flex';
           document.getElementById('aiActionBtn').style.display = 'inline-flex';
           document.getElementById('deal_company_name').value = deal.company_name || '';
+          if (deal.expected_amount != null) document.getElementById('deal_expected_amount').value = deal.expected_amount;
           loadActivities();
         } else {
           document.getElementById('pageTitle').textContent = '新規案件';
@@ -221,6 +228,8 @@
         const data = collectFormData();
         data.company_name = document.getElementById('deal_company_name').value.trim();
         if (!data.company_name) { Toast.error('企業名を入力してください'); Loading.hide(); return; }
+        const amtVal = document.getElementById('deal_expected_amount').value;
+        data.expected_amount = amtVal !== '' ? parseInt(amtVal) : null;
 
         if (isNew || !dealId) {
           const created = await API.deals.create(data);

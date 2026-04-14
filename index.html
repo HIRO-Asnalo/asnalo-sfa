@@ -240,6 +240,11 @@
         <div class="kpi-val" id="kpi-activities">0<span class="kpi-unit">件</span></div>
         <div class="kpi-sub">コンタクト数</div>
       </div>
+      <div class="kpi-card" style="border-color:#8b5cf6;grid-column:span 2;" id="kpi-pipeline-card" hidden>
+        <div class="kpi-label">パイプライン合計（稼働案件）</div>
+        <div class="kpi-val" id="kpi-pipeline">—</div>
+        <div class="kpi-sub" id="kpi-pipeline-sub"></div>
+      </div>
     </div>
 
     <!-- 警告バー & MA統計 -->
@@ -310,6 +315,12 @@
         document.getElementById('lastUpdated').textContent   = '更新: ' + fmtDatetime(new Date().toISOString());
 
         renderAlerts(d.summary, d.ma_stats);
+        if (d.total_pipeline > 0) {
+          document.getElementById('kpi-pipeline-card').hidden = false;
+          document.getElementById('kpi-pipeline').innerHTML = `¥${Number(d.total_pipeline).toLocaleString()}<span class="kpi-unit">円</span>`;
+          const phases = Object.entries(d.pipeline_amount || {}).filter(([,v])=>v>0).map(([k,v])=>`${k}: ¥${Number(v).toLocaleString()}`).join(' ／ ');
+          document.getElementById('kpi-pipeline-sub').textContent = phases;
+        }
         renderPipeline(d.phase_count);
         renderChart(d.phase_count);
         renderMembers(d.recent_deals);
