@@ -228,18 +228,15 @@
       el.querySelectorAll('.seq-card').forEach(card => {
         card.addEventListener('click', () => selectSeq(card.dataset.id));
       });
-
-      // 選択中を維持
-      if (currentSeqId) {
-        const found = sequences.find(s => s.id === currentSeqId);
-        if (found) selectSeq(currentSeqId);
-      }
     }
 
     // ===== シナリオ選択 =====
     async function selectSeq(id) {
       currentSeqId = id;
-      renderSeqList();
+      // active クラスだけ更新（renderSeqList は呼ばない）
+      document.querySelectorAll('.seq-card').forEach(c => {
+        c.classList.toggle('selected', c.dataset.id === id);
+      });
       await loadSeqDetail(id);
     }
 
