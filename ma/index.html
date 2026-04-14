@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MAメール | アスナロ SFA</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <style>
+    .ma-layout { display: flex; gap: 20px; height: calc(100vh - 120px); overflow: hidden; }
+    .ma-sidebar { width: 280px; flex-shrink: 0; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; }
+    .ma-main { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+
+    .seq-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; cursor: pointer; transition: all .15s; }
+    .seq-card:hover { border-color: var(--primary); }
+    .seq-card.selected { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(60,82,137,.15); }
+    .seq-card-name { font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+    .seq-card-meta { font-size: 12px; color: var(--text-muted); display: flex; gap: 10px; align-items: center; }
+    .seq-card-actions { display: flex; gap: 6px; margin-top: 10px; }
+
+    .steps-table th, .steps-table td { padding: 10px 12px; }
+    .steps-table td:last-child { white-space: nowrap; }
+    .step-body-preview { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); font-size: 12px; }
+
+    .log-table th, .log-table td { padding: 8px 12px; font-size: 13px; }
+    .badge-sent { background: #dcfce7; color: #166534; }
+    .badge-unsent { background: #fef3c7; color: #92400e; }
+    .badge-error { background: #fee2e2; color: #991b1b; }
+    .badge-opened { background: #dbeafe; color: #1e3a8a; }
+
+    .modal-backdrop { position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;display:flex;align-items:center;justify-content:center; }
+    .modal { background:#fff;border-radius:var(--radius);padding:28px;width:560px;max-width:95vw;max-height:85vh;overflow-y:auto; }
+    .modal h2 { font-size:16px;font-weight:700;margin-bottom:20px; }
+    .hidden { display: none !important; }
+
+    .tab-bar { display:flex; gap:4px; border-bottom:1px solid var(--border); margin-bottom:20px; }
+    .tab-btn { padding:8px 16px;border:none;background:none;cursor:pointer;font-size:13px;color:var(--text-muted);border-bottom:2px solid transparent;margin-bottom:-1px; }
+    .tab-btn.active { color:var(--primary);font-weight:600;border-bottom-color:var(--primary); }
+
+    .enroll-select-wrap { display:flex;gap:10px;align-items:flex-end; }
+    .enroll-select-wrap select { flex:1; }
+
+    .send-btn-wrap { display:flex;justify-content:flex-end;margin-top:16px; }
+
+    textarea.form-input { resize: vertical; min-height: 120px; font-family: inherit; }
+    .form-row { display:grid;grid-template-columns:1fr 1fr;gap:12px; }
+
+    .empty-seq { text-align:center;padding:40px;color:var(--text-muted); }
+    .empty-seq svg { width:40px;height:40px;stroke:var(--border);margin-bottom:12px; }
+  </style>
+</head>
+<body class="app-layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-text">ASNALO SFA</div><div class="logo-sub">営業管理システム</div></div>
+    <nav class="sidebar-nav">
+      <a href="/" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>ダッシュボード</a>
+      <a href="/deals/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>案件管理</a>
+      <a href="/customers/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>顧客管理</a>
+      <a href="/ma/index.html" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>MAメール</a>
+      <div class="nav-section">設定</div>
+      <a href="/settings/fields.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>フィールド設定</a>
+    </nav>
+    <div class="sidebar-user" id="sidebarUser"></div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <h1 class="page-title">MAメール</h1>
+      <div class="page-actions">
+        <button class="btn btn-primary" id="btnNewSeq">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          新規シナリオ
+        </button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="ma-layout">
+
+        <!-- ■ 左パネル: シナリオ一覧 -->
+        <div class="ma-sidebar">
+          <div id="seqList">
+            <div class="empty-seq">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <div>シナリオがありません</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ■ 右パネル: 詳細 -->
+        <div class="ma-main" id="maMain">
+          <div class="empty-seq" style="margin-top:60px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <div>左のシナリオを選択してください</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- ■ シナリオ作成/編集 モーダル -->
+  <div class="modal-backdrop hidden" id="seqModal">
+    <div class="modal">
+      <h2 id="seqModalTitle">シナリオを作成</h2>
+      <form id="seqForm">
+        <input type="hidden" id="seqId">
+        <div class="form-group">
+          <label class="form-label">シナリオ名 <span style="color:var(--danger)">*</span></label>
+          <input type="text" class="form-input" id="seqName" required placeholder="例: 問い合わせ後フォロー">
+        </div>
+        <div class="form-group">
+          <label class="form-label">説明</label>
+          <textarea class="form-input" id="seqDesc" rows="3" placeholder="このシナリオの目的・概要"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">ステータス</label>
+          <select class="form-select" id="seqStatus">
+            <option>停止中</option>
+            <option>稼働中</option>
+          </select>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+          <button type="button" class="btn btn-ghost" id="seqModalClose">キャンセル</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ■ ステップ作成/編集 モーダル -->
+  <div class="modal-backdrop hidden" id="stepModal">
+    <div class="modal">
+      <h2 id="stepModalTitle">ステップを追加</h2>
+      <form id="stepForm">
+        <input type="hidden" id="stepId">
+        <input type="hidden" id="stepSeqId">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">送信タイミング（登録後 X 日目）</label>
+            <input type="number" class="form-input" id="stepDelay" min="0" value="0" placeholder="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">順番</label>
+            <input type="number" class="form-input" id="stepOrder" min="1" value="1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">件名 <span style="color:var(--danger)">*</span></label>
+          <input type="text" class="form-input" id="stepSubject" required placeholder="メールの件名">
+        </div>
+        <div class="form-group">
+          <label class="form-label">本文 <span style="color:var(--danger)">*</span></label>
+          <textarea class="form-input" id="stepBody" required rows="10" placeholder="メール本文（プレーンテキスト）"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+          <button type="button" class="btn btn-ghost" id="stepModalClose">キャンセル</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ■ 顧客登録 モーダル -->
+  <div class="modal-backdrop hidden" id="enrollModal">
+    <div class="modal">
+      <h2>顧客をシナリオに登録</h2>
+      <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px;">登録した顧客に対して、各ステップのメールが自動スケジュールされます。</p>
+      <div class="form-group">
+        <label class="form-label">顧客を選択</label>
+        <select class="form-select" id="enrollCustomer" style="width:100%">
+          <option value="">選択してください</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+        <button type="button" class="btn btn-ghost" id="enrollModalClose">キャンセル</button>
+        <button type="button" class="btn btn-primary" id="enrollConfirm">登録する</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/utils.js"></script>
+  <script>
+    let sequences = [];
+    let customers = [];
+    let currentSeqId = null;
+    let currentTab = 'steps'; // 'steps' | 'log'
+
+    initPage(async () => {
+      try {
+        [sequences, customers] = await Promise.all([
+          API.ma.listSequences(),
+          API.customers.list(),
+        ]);
+        renderSeqList();
+        setupEnrollOptions();
+      } catch(e) {
+        Toast.error('データ取得エラー: ' + e.message);
+      }
+    });
+
+    // ===== シナリオ一覧 =====
+    function renderSeqList() {
+      const el = document.getElementById('seqList');
+      if (!sequences.length) {
+        el.innerHTML = `<div class="empty-seq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><div>シナリオがありません</div></div>`;
+        return;
+      }
+      el.innerHTML = sequences.map(s => {
+        const statusBadge = s.status === '稼働中'
+          ? `<span class="badge badge-green">${s.status}</span>`
+          : `<span class="badge badge-gray">${s.status}</span>`;
+        return `
+          <div class="seq-card ${s.id === currentSeqId ? 'selected' : ''}" data-id="${s.id}">
+            <div class="seq-card-name">${s.name}</div>
+            <div class="seq-card-meta">${statusBadge} <span>${fmtDate(s.created_at)}</span></div>
+            <div class="seq-card-actions">
+              <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();editSeq('${s.id}')">編集</button>
+              <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="event.stopPropagation();deleteSeq('${s.id}')">削除</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      el.querySelectorAll('.seq-card').forEach(card => {
+        card.addEventListener('click', () => selectSeq(card.dataset.id));
+      });
+
+      // 選択中を維持
+      if (currentSeqId) {
+        const found = sequences.find(s => s.id === currentSeqId);
+        if (found) selectSeq(currentSeqId);
+      }
+    }
+
+    // ===== シナリオ選択 =====
+    async function selectSeq(id) {
+      currentSeqId = id;
+      renderSeqList();
+      await loadSeqDetail(id);
+    }
+
+    async function loadSeqDetail(id) {
+      try {
+        const seq = await API.ma.getSequence(id);
+        renderSeqDetail(seq);
+      } catch(e) {
+        Toast.error('シナリオ取得エラー: ' + e.message);
+      }
+    }
+
+    function renderSeqDetail(seq) {
+      const main = document.getElementById('maMain');
+      const statusBadge = seq.status === '稼働中'
+        ? `<span class="badge badge-green">${seq.status}</span>`
+        : `<span class="badge badge-gray">${seq.status}</span>`;
+
+      main.innerHTML = `
+        <div class="card" style="padding:20px 24px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+            <div>
+              <h2 style="font-size:18px;font-weight:700;margin-bottom:6px;">${seq.name} ${statusBadge}</h2>
+              ${seq.description ? `<p style="color:var(--text-muted);font-size:13px;">${seq.description}</p>` : ''}
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="btn btn-ghost btn-sm" onclick="openEnrollModal('${seq.id}')">
+                <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;margin-right:4px;"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                顧客を登録
+              </button>
+              <button class="btn btn-ghost btn-sm" id="btnSendPending" onclick="sendPending()">
+                <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;margin-right:4px;"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                未送信を配信
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="padding:0 0 0 0;">
+            <div class="tab-bar" style="padding:0 20px;">
+              <button class="tab-btn ${currentTab === 'steps' ? 'active' : ''}" onclick="switchTab('steps')">ステップ設定</button>
+              <button class="tab-btn ${currentTab === 'log' ? 'active' : ''}" onclick="switchTab('log')">配信ログ</button>
+            </div>
+            <div id="tabSteps" class="${currentTab !== 'steps' ? 'hidden' : ''}" style="padding:0 20px 20px;">
+              <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+                <button class="btn btn-primary btn-sm" onclick="openStepModal(null, '${seq.id}')">
+                  <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2.5;margin-right:4px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                  ステップを追加
+                </button>
+              </div>
+              ${renderStepsTable(seq.steps || [])}
+            </div>
+            <div id="tabLog" class="${currentTab !== 'log' ? 'hidden' : ''}" style="padding:0 20px 20px;">
+              <div id="logContent" style="margin-top:12px;">読み込み中…</div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      if (currentTab === 'log') loadLog(seq.id);
+    }
+
+    function renderStepsTable(steps) {
+      if (!steps.length) {
+        return `<div style="text-align:center;padding:32px;color:var(--text-muted);">ステップがありません。「ステップを追加」から作成してください。</div>`;
+      }
+      return `
+        <div class="table-wrap">
+          <table class="steps-table">
+            <thead><tr>
+              <th style="width:60px">順番</th>
+              <th style="width:80px">X日後</th>
+              <th>件名</th>
+              <th>本文プレビュー</th>
+              <th style="width:120px"></th>
+            </tr></thead>
+            <tbody>
+              ${steps.map(s => `
+                <tr>
+                  <td style="text-align:center">${s.step_order}</td>
+                  <td style="text-align:center">${s.delay_days}日</td>
+                  <td style="font-weight:600">${s.subject || '（件名なし）'}</td>
+                  <td><div class="step-body-preview">${s.body || ''}</div></td>
+                  <td>
+                    <button class="btn btn-ghost btn-sm" onclick="openStepModal('${s.id}', '${s.sequence_id}')">編集</button>
+                    <button class="btn btn-ghost btn-sm" style="color:var(--danger)" onclick="deleteStep('${s.id}')">削除</button>
+                  </td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function switchTab(tab) {
+      currentTab = tab;
+      if (currentSeqId) {
+        const seq = sequences.find(s => s.id === currentSeqId);
+        if (seq) loadSeqDetail(currentSeqId);
+      }
+    }
+
+    // ===== 配信ログ =====
+    async function loadLog(seqId) {
+      const el = document.getElementById('logContent');
+      if (!el) return;
+      try {
+        // ma_sends を API 経由で取得（現状は直接クエリ手段がないため customers から一旦表示）
+        // バックエンドに /ma-logs?sequence_id= が必要だが、暫定で sendPending → status確認フローに
+        el.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-muted);">配信ログを取得するには「未送信を配信」ボタンで送信後に確認できます。<br><small>※ 配信ログ専用API（/ma-logs）を追加すると詳細表示が可能になります。</small></div>`;
+      } catch(e) {
+        el.innerHTML = `<div style="color:var(--danger)">ログ取得エラー: ${e.message}</div>`;
+      }
+    }
+
+    // ===== 未送信を配信 =====
+    async function sendPending() {
+      if (!confirm('スケジュール済みの未送信メールを全て配信しますか？')) return;
+      Loading.show();
+      try {
+        const res = await API.ma.sendPending();
+        Loading.hide();
+        Toast.success(`${res.sent}件のメールを配信しました`);
+      } catch(e) {
+        Loading.hide();
+        Toast.error('配信エラー: ' + e.message);
+      }
+    }
+
+    // ===== シナリオ 作成/編集 モーダル =====
+    document.getElementById('btnNewSeq').addEventListener('click', () => {
+      document.getElementById('seqModalTitle').textContent = '新規シナリオを作成';
+      document.getElementById('seqId').value = '';
+      document.getElementById('seqName').value = '';
+      document.getElementById('seqDesc').value = '';
+      document.getElementById('seqStatus').value = '停止中';
+      document.getElementById('seqModal').classList.remove('hidden');
+    });
+
+    function editSeq(id) {
+      const seq = sequences.find(s => s.id === id);
+      if (!seq) return;
+      document.getElementById('seqModalTitle').textContent = 'シナリオを編集';
+      document.getElementById('seqId').value = seq.id;
+      document.getElementById('seqName').value = seq.name;
+      document.getElementById('seqDesc').value = seq.description || '';
+      document.getElementById('seqStatus').value = seq.status;
+      document.getElementById('seqModal').classList.remove('hidden');
+    }
+
+    document.getElementById('seqModalClose').addEventListener('click', () => {
+      document.getElementById('seqModal').classList.add('hidden');
+    });
+
+    document.getElementById('seqForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = document.getElementById('seqId').value;
+      const data = {
+        name:        document.getElementById('seqName').value,
+        description: document.getElementById('seqDesc').value,
+        status:      document.getElementById('seqStatus').value,
+      };
+
+      Loading.show();
+      try {
+        if (id) {
+          await API.ma.updateSequence({ id, ...data });
+          const idx = sequences.findIndex(s => s.id === id);
+          if (idx >= 0) sequences[idx] = { ...sequences[idx], ...data };
+          Toast.success('シナリオを更新しました');
+        } else {
+          const created = await API.ma.createSequence(data);
+          sequences.push(created);
+          Toast.success('シナリオを作成しました');
+        }
+        document.getElementById('seqModal').classList.add('hidden');
+        renderSeqList();
+        if (id && currentSeqId === id) loadSeqDetail(id);
+      } catch(e) {
+        Toast.error('保存エラー: ' + e.message);
+      } finally {
+        Loading.hide();
+      }
+    });
+
+    async function deleteSeq(id) {
+      if (!confirm('このシナリオを削除しますか？ステップも全て削除されます。')) return;
+      Loading.show();
+      try {
+        await API.ma.deleteSequence(id);
+        sequences = sequences.filter(s => s.id !== id);
+        if (currentSeqId === id) {
+          currentSeqId = null;
+          document.getElementById('maMain').innerHTML = `<div class="empty-seq" style="margin-top:60px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg><div>左のシナリオを選択してください</div></div>`;
+        }
+        Toast.success('シナリオを削除しました');
+        renderSeqList();
+      } catch(e) {
+        Toast.error('削除エラー: ' + e.message);
+      } finally {
+        Loading.hide();
+      }
+    }
+
+    // ===== ステップ 作成/編集 モーダル =====
+    function openStepModal(stepId, seqId) {
+      document.getElementById('stepSeqId').value = seqId;
+
+      if (stepId) {
+        // 編集: 現在のシナリオのステップから取得
+        // getSequenceを再呼び出しして最新ステップを取得
+        API.ma.getSequence(seqId).then(seq => {
+          const step = (seq.steps || []).find(s => s.id === stepId);
+          if (!step) return;
+          document.getElementById('stepModalTitle').textContent = 'ステップを編集';
+          document.getElementById('stepId').value = step.id;
+          document.getElementById('stepOrder').value = step.step_order;
+          document.getElementById('stepDelay').value = step.delay_days;
+          document.getElementById('stepSubject').value = step.subject || '';
+          document.getElementById('stepBody').value = step.body || '';
+          document.getElementById('stepModal').classList.remove('hidden');
+        });
+      } else {
+        document.getElementById('stepModalTitle').textContent = 'ステップを追加';
+        document.getElementById('stepId').value = '';
+        document.getElementById('stepOrder').value = 1;
+        document.getElementById('stepDelay').value = 0;
+        document.getElementById('stepSubject').value = '';
+        document.getElementById('stepBody').value = '';
+        document.getElementById('stepModal').classList.remove('hidden');
+      }
+    }
+
+    document.getElementById('stepModalClose').addEventListener('click', () => {
+      document.getElementById('stepModal').classList.add('hidden');
+    });
+
+    document.getElementById('stepForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id    = document.getElementById('stepId').value;
+      const seqId = document.getElementById('stepSeqId').value;
+      const data = {
+        sequence_id: seqId,
+        step_order:  parseInt(document.getElementById('stepOrder').value),
+        delay_days:  parseInt(document.getElementById('stepDelay').value),
+        subject:     document.getElementById('stepSubject').value,
+        body:        document.getElementById('stepBody').value,
+      };
+
+      Loading.show();
+      try {
+        if (id) {
+          await API.ma.updateStep({ id, ...data });
+          Toast.success('ステップを更新しました');
+        } else {
+          await API.ma.createStep(data);
+          Toast.success('ステップを追加しました');
+        }
+        document.getElementById('stepModal').classList.add('hidden');
+        await loadSeqDetail(seqId);
+      } catch(e) {
+        Toast.error('保存エラー: ' + e.message);
+      } finally {
+        Loading.hide();
+      }
+    });
+
+    async function deleteStep(stepId) {
+      if (!confirm('このステップを削除しますか？')) return;
+      Loading.show();
+      try {
+        await API.ma.deleteStep(stepId);
+        Toast.success('ステップを削除しました');
+        await loadSeqDetail(currentSeqId);
+      } catch(e) {
+        Toast.error('削除エラー: ' + e.message);
+      } finally {
+        Loading.hide();
+      }
+    }
+
+    // ===== 顧客登録 モーダル =====
+    function setupEnrollOptions() {
+      const sel = document.getElementById('enrollCustomer');
+      sel.innerHTML = '<option value="">選択してください</option>';
+      customers.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = `${c.company_name || '（社名なし）'} - ${c.contact_name || ''}`.trim().replace(/ - $/, '');
+        sel.appendChild(opt);
+      });
+    }
+
+    function openEnrollModal(seqId) {
+      document.getElementById('enrollModal').dataset.seqId = seqId;
+      document.getElementById('enrollCustomer').value = '';
+      document.getElementById('enrollModal').classList.remove('hidden');
+    }
+
+    document.getElementById('enrollModalClose').addEventListener('click', () => {
+      document.getElementById('enrollModal').classList.add('hidden');
+    });
+
+    document.getElementById('enrollConfirm').addEventListener('click', async () => {
+      const seqId      = document.getElementById('enrollModal').dataset.seqId;
+      const customerId = document.getElementById('enrollCustomer').value;
+      if (!customerId) { Toast.error('顧客を選択してください'); return; }
+
+      Loading.show();
+      try {
+        const res = await API.ma.enroll(seqId, customerId);
+        document.getElementById('enrollModal').classList.add('hidden');
+        Toast.success(`シナリオに登録しました（${res.sends?.length || 0}件のメールをスケジュール）`);
+      } catch(e) {
+        Toast.error('登録エラー: ' + e.message);
+      } finally {
+        Loading.hide();
+      }
+    });
+
+    // モーダル外クリックで閉じる
+    ['seqModal', 'stepModal', 'enrollModal'].forEach(id => {
+      document.getElementById(id).addEventListener('click', function(e) {
+        if (e.target === this) this.classList.add('hidden');
+      });
+    });
+  </script>
+</body>
+</html>
