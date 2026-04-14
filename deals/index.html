@@ -34,6 +34,10 @@
             <svg viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           </button>
         </div>
+        <button class="btn btn-ghost" id="btnExport" onclick="exportCSV()">
+          <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          CSV出力
+        </button>
         <a href="/deals/detail.html?new=1" class="btn btn-primary">
           <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           新規案件
@@ -223,6 +227,31 @@
           </tr>
         `;
       }).join('');
+    }
+
+    // ===== CSV エクスポート =====
+    function exportCSV() {
+      if (!allDeals.length) { Toast.error('エクスポートするデータがありません'); return; }
+      const headers = ['案件名','企業名','フェーズ','担当者','受注予定日','作成日','更新日'];
+      const rows = allDeals.map(d => [
+        d.deal_name || '', d.company_name || '', d.phase || '',
+        d.assigned_user || '', d.expected_close_date || '',
+        (d.created_at || '').slice(0,10), (d.updated_at || '').slice(0,10),
+      ]);
+      downloadCSV('案件一覧.csv', headers, rows);
+    }
+
+    function downloadCSV(filename, headers, rows) {
+      const bom = '\uFEFF';
+      const csv = bom + [headers, ...rows]
+        .map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(','))
+        .join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(a.href);
     }
   </script>
 </body>

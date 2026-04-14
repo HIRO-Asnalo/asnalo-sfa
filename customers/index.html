@@ -29,6 +29,10 @@
         <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">契約済みクライアントのCRM管理</div>
       </div>
       <div class="page-actions">
+        <button class="btn btn-ghost" onclick="exportCSV()">
+          <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;margin-right:4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          CSV出力
+        </button>
         <button class="btn btn-primary" onclick="openNewModal()">
           <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           新規顧客登録
@@ -315,6 +319,28 @@
       } catch(e) {
         Toast.error('登録エラー: ' + e.message);
       }
+    }
+
+    // ===== CSV エクスポート =====
+    function exportCSV() {
+      if (!allCustomers.length) { Toast.error('エクスポートするデータがありません'); return; }
+      const headers = ['会社名','担当者名','役職','メール','電話','セグメント','CS担当','作成日'];
+      const rows = allCustomers.map(c => [
+        c.company_name || '', c.contact_name || '', c.contact_title || '',
+        c.contact_email || '', c.contact_phone || '',
+        c.segment || '', c.cs_rep || '',
+        (c.created_at || '').slice(0,10),
+      ]);
+      const bom = '\uFEFF';
+      const csv = bom + [headers, ...rows]
+        .map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(','))
+        .join('\r\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = '顧客一覧.csv';
+      a.click();
+      URL.revokeObjectURL(a.href);
     }
   </script>
 </body>

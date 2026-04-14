@@ -13,10 +13,11 @@ exports.handler = async (event) => {
   if (auth.error) return auth;
 
   try {
-    const [deals, customers, activities] = await Promise.all([
+    const [deals, customers, activities, maSends] = await Promise.all([
       getRows('deals'),
       getRows('customers'),
       getRows('activities'),
+      getRows('ma_sends'),
     ]);
 
     const now = new Date();
@@ -43,6 +44,22 @@ exports.handler = async (event) => {
       phaseCount[p] = (phaseCount[p] || 0) + 1;
     });
 
+    // 7日以上未更新の稼働案件
+    const staleThreshold = new Date(Date.now() - 7 * 86400000);
+    const staleDeals = activeDeals.filter(d =>
+      d.updated_at && new Date(d.updated_at) < staleThreshold
+    );
+
+    // 今月の受注数
+    const wonThisMonth = wonDeals.filter(d =>
+      d.updated_at?.startsWith(thisMonth)
+    );
+
+    // MA 統計
+    const maSent   = maSends.filter(s => s.status === '送信済み').length;
+    const maOpened = maSends.filter(s => s.opened_at).length;
+    const maOpenRate = maSent > 0 ? Math.round(maOpened / maSent * 100) : 0;
+
     const recentDeals = [...deals]
       .sort((a, b) => (b.updated_at || '').localeCompare(a.updated_at || ''))
       .slice(0, 5);
@@ -58,6 +75,13 @@ exports.handler = async (event) => {
         win_rate:           winRate,
         closing_this_month: closingThisMonth.length,
         week_activities:    weekActivities.length,
+        stale_deals:        staleDeals.length,
+        won_this_month:     wonThisMonth.length,
+      },
+      ma_stats: {
+        total_sent: maSent,
+        opened:     maOpened,
+        open_rate:  maOpenRate,
       },
       phase_count:        phaseCount,
       recent_deals:       recentDeals,

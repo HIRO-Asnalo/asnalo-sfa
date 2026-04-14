@@ -80,4 +80,21 @@ function notifyPhaseChanged(deal, oldPhase, userName) {
   });
 }
 
-module.exports = { notifyDealCreated, notifyPhaseChanged };
+/** フォローアップリマインダー通知 */
+function notifyStaleDeals(deals, staleDays) {
+  if (!deals.length) return Promise.resolve();
+
+  const rows = deals.map(d =>
+    `• *${d.deal_name || '（無題）'}* ／ ${d.company_name || '—'} ／ ${phaseEmoji(d.phase)} ${d.phase} ／ 担当: ${d.assigned_user || '—'} ／ *${d.staleDays}日間未更新*`
+  ).join('\n');
+
+  return postToSlack({
+    blocks: [
+      { type: 'header', text: { type: 'plain_text', text: `⚠️ ${staleDays}日以上更新されていない案件 (${deals.length}件)`, emoji: true } },
+      { type: 'section', text: { type: 'mrkdwn', text: rows } },
+      { type: 'context', elements: [{ type: 'mrkdwn', text: '対応が必要な案件を確認してください。' }] },
+    ],
+  });
+}
+
+module.exports = { notifyDealCreated, notifyPhaseChanged, notifyStaleDeals };
