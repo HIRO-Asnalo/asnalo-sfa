@@ -63,6 +63,12 @@ const API = (() => {
     stats: () => request('GET', '/dashboard'),
   };
 
+  // ===== Goals =====
+  const goals = {
+    get:  (year, month) => request('GET',  `/goals?year=${year}&month=${month}`),
+    save: (data)        => request('POST', '/goals', data),
+  };
+
   // ===== AI生成 =====
   const ai = {
     generate: (type, data) => request('POST', '/ai-generate', { type, data }),
@@ -83,5 +89,5 @@ const API = (() => {
     sendPending:    ()              => request('POST',   '/ma-send', {}),
   };
 
-  return { deals, customers, fields, activities, dashboard, ai, ma };
+  return { deals, customers, fields, activities, dashboard, ai, ma, goals };
 })();

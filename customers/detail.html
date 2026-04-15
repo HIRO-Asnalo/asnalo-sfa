@@ -46,6 +46,7 @@
             <button class="tab-btn active" onclick="switchTab('base',this)">基本情報</button>
             <button class="tab-btn"        onclick="switchTab('sales',this)">セールス</button>
             <button class="tab-btn"        onclick="switchTab('cs',this)">CS管理</button>
+            <button class="tab-btn"        onclick="switchTab('deals',this)">関連案件</button>
           </div>
 
           <!-- 基本情報タブ -->
@@ -315,6 +316,18 @@
               </div>
             </div>
           </div>
+
+          <!-- 関連案件タブ -->
+          <div id="tab-deals" class="card hidden">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+              <div class="card-title" style="margin-bottom:0;">関連案件</div>
+              <a id="newDealLink" href="/deals/detail.html?new=1" class="btn btn-primary btn-sm">
+                <svg viewBox="0 0 24 24" style="width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.5;margin-right:4px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                新規案件
+              </a>
+            </div>
+            <div id="relatedDealsList"><div class="empty-state"><div class="empty-state-sub">関連案件なし</div></div></div>
+          </div>
         </div>
 
         <!-- 右: 活動履歴 -->
@@ -348,9 +361,39 @@
     function switchTab(tab, btn) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      ['base','sales','cs'].forEach(t => {
+      ['base','sales','cs','deals'].forEach(t => {
         document.getElementById('tab-' + t).classList.toggle('hidden', t !== tab);
       });
+      if (tab === 'deals') loadRelatedDeals();
+    }
+
+    async function loadRelatedDeals() {
+      const el = document.getElementById('relatedDealsList');
+      try {
+        const allDeals = await API.deals.list();
+        const related = allDeals.filter(d =>
+          d.customer_id === customerId ||
+          (customer.company_name && d.company_name === customer.company_name)
+        );
+        if (!related.length) {
+          el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px;">関連する案件がありません</div>';
+          return;
+        }
+        el.innerHTML = related.map(d => `
+          <a href="/deals/detail.html?id=${d.id}" style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid #f1f5f9;text-decoration:none;color:inherit;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-weight:600;font-size:13px;color:var(--primary);">${d.deal_name || '（無題）'}</div>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${d.assigned_user || '—'} ・ 更新: ${fmtDate(d.updated_at)}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+              ${phaseBadge(d.phase)}
+              ${d.expected_amount ? `<span style="font-size:12px;font-weight:700;color:var(--primary);">¥${Number(d.expected_amount).toLocaleString()}</span>` : ''}
+            </div>
+          </a>
+        `).join('');
+      } catch(e) {
+        el.innerHTML = `<div style="color:var(--danger);font-size:12px;">取得エラー: ${e.message}</div>`;
+      }
     }
 
     initPage(async () => {

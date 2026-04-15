@@ -45,7 +45,7 @@
           <!-- 企業名（顧客登録不要・直入力） -->
           <div class="card" style="margin-bottom:16px;">
             <div class="card-title">企業情報</div>
-            <div style="display:grid;grid-template-columns:1fr 200px;gap:12px;">
+            <div style="display:grid;grid-template-columns:1fr 200px;gap:12px;margin-bottom:12px;">
               <div class="form-group" style="margin-bottom:0;">
                 <label class="form-label">企業名 <span class="required">*</span></label>
                 <input type="text" class="form-input" id="deal_company_name" placeholder="株式会社〇〇">
@@ -54,6 +54,12 @@
                 <label class="form-label">見込み金額（円）</label>
                 <input type="number" class="form-input" id="deal_expected_amount" placeholder="0" min="0" step="1000">
               </div>
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label">顧客（CRM）に紐づける</label>
+              <select class="form-select" id="deal_customer_id">
+                <option value="">紐づけない</option>
+              </select>
             </div>
           </div>
 
@@ -112,7 +118,20 @@
 
       Loading.show();
       try {
-        fields = await API.fields.list('deal');
+        const [fieldsData, customerList] = await Promise.all([
+          API.fields.list('deal'),
+          API.customers.list(),
+        ]);
+        fields = fieldsData;
+
+        // 顧客セレクト
+        const custSel = document.getElementById('deal_customer_id');
+        customerList.forEach(c => {
+          const opt = document.createElement('option');
+          opt.value = c.id;
+          opt.textContent = c.company_name || c.contact_name || c.id;
+          custSel.appendChild(opt);
+        });
 
         if (!isNew && dealId) {
           deal = await API.deals.get(dealId);
@@ -123,6 +142,7 @@
           document.getElementById('aiActionBtn').style.display = 'inline-flex';
           document.getElementById('deal_company_name').value = deal.company_name || '';
           if (deal.expected_amount != null) document.getElementById('deal_expected_amount').value = deal.expected_amount;
+          if (deal.customer_id) custSel.value = deal.customer_id;
           loadActivities();
         } else {
           document.getElementById('pageTitle').textContent = '新規案件';
@@ -230,6 +250,8 @@
         if (!data.company_name) { Toast.error('企業名を入力してください'); Loading.hide(); return; }
         const amtVal = document.getElementById('deal_expected_amount').value;
         data.expected_amount = amtVal !== '' ? parseInt(amtVal) : null;
+        const custId = document.getElementById('deal_customer_id').value;
+        if (custId) data.customer_id = custId;
 
         if (isNew || !dealId) {
           const created = await API.deals.create(data);

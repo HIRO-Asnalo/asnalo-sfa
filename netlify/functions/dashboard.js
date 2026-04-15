@@ -13,11 +13,16 @@ exports.handler = async (event) => {
   if (auth.error) return auth;
 
   try {
-    const [deals, customers, activities, maSends] = await Promise.all([
+    const now2 = new Date();
+    const thisYear  = String(now2.getFullYear());
+    const thisMonthNum = String(now2.getMonth() + 1);
+
+    const [deals, customers, activities, maSends, goalRows] = await Promise.all([
       getRows('deals'),
       getRows('customers'),
       getRows('activities'),
       getRows('ma_sends'),
+      getRows('goals', { year: thisYear, month: thisMonthNum }),
     ]);
 
     const now = new Date();
@@ -65,6 +70,12 @@ exports.handler = async (event) => {
       d.updated_at?.startsWith(thisMonth)
     );
 
+    // 目標 vs 実績
+    const goal = goalRows[0] || null;
+    const wonThisMonthAmt = wonDeals
+      .filter(d => d.updated_at?.startsWith(thisMonth))
+      .reduce((s, d) => s + (Number(d.expected_amount) || 0), 0);
+
     // MA 統計
     const maSent   = maSends.filter(s => s.status === '送信済み').length;
     const maOpened = maSends.filter(s => s.opened_at).length;
@@ -92,6 +103,12 @@ exports.handler = async (event) => {
         total_sent: maSent,
         opened:     maOpened,
         open_rate:  maOpenRate,
+      },
+      goal,
+      actual: {
+        won_count:    wonThisMonth.length,
+        won_amount:   wonThisMonthAmt,
+        activity_count: weekActivities.length,
       },
       pipeline_amount:    pipelineAmount,
       total_pipeline:     totalPipelineAmount,

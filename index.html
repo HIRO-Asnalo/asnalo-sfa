@@ -253,6 +253,21 @@
     <!-- コンテンツ -->
     <div class="db-body">
 
+      <!-- 0段目: 今月の目標達成率 -->
+      <div id="goalSection" class="card" style="margin-bottom:14px;display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+          <div class="s-title" style="margin-bottom:0;" id="goalTitle">今月の目標達成率</div>
+          <button class="btn btn-ghost btn-sm" onclick="openGoalModal()">目標を設定</button>
+        </div>
+        <div id="goalBars"></div>
+      </div>
+      <div class="card" style="margin-bottom:14px;" id="goalEmptyCard">
+        <div style="display:flex;align-items:center;justify-content:space-between;">
+          <div style="font-size:13px;color:var(--text-muted);">今月の目標が未設定です</div>
+          <button class="btn btn-primary btn-sm" onclick="openGoalModal()">目標を設定する</button>
+        </div>
+      </div>
+
       <!-- 1段目: パイプライン / ドーナツ / 担当者 -->
       <div class="db-row col3">
 
@@ -315,6 +330,7 @@
         document.getElementById('lastUpdated').textContent   = '更新: ' + fmtDatetime(new Date().toISOString());
 
         renderAlerts(d.summary, d.ma_stats);
+        renderGoal(d.goal, d.actual);
         if (d.total_pipeline > 0) {
           document.getElementById('kpi-pipeline-card').hidden = false;
           document.getElementById('kpi-pipeline').innerHTML = `¥${Number(d.total_pipeline).toLocaleString()}<span class="kpi-unit">円</span>`;
@@ -424,6 +440,109 @@
           </div>
         </div>`).join('');
     }
+
+    // ===== 目標達成率 =====
+    const now = new Date();
+    const currentYear  = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
+    function renderGoal(goal, actual) {
+      const emptyCard   = document.getElementById('goalEmptyCard');
+      const goalSection = document.getElementById('goalSection');
+      if (!goal) {
+        emptyCard.style.display   = 'block';
+        goalSection.style.display = 'none';
+        return;
+      }
+      emptyCard.style.display   = 'none';
+      goalSection.style.display = 'block';
+      document.getElementById('goalTitle').textContent = `${currentYear}年${currentMonth}月 目標達成率`;
+
+      const bars = [];
+      if (goal.deal_count) {
+        const pct = Math.min(Math.round((actual.won_count / goal.deal_count) * 100), 100);
+        bars.push(goalBar('受注件数', actual.won_count, goal.deal_count, '件', pct));
+      }
+      if (goal.revenue) {
+        const pct = Math.min(Math.round((actual.won_amount / goal.revenue) * 100), 100);
+        bars.push(goalBar('受注金額', `¥${actual.won_amount.toLocaleString()}`, `¥${Number(goal.revenue).toLocaleString()}`, '', pct));
+      }
+      if (goal.activity_count) {
+        const pct = Math.min(Math.round((actual.activity_count / goal.activity_count) * 100), 100);
+        bars.push(goalBar('今週の活動数', actual.activity_count, goal.activity_count, '件', pct));
+      }
+      document.getElementById('goalBars').innerHTML = bars.join('');
+    }
+
+    function goalBar(label, actual, target, unit, pct) {
+      const color = pct >= 100 ? '#22c55e' : pct >= 70 ? '#f59e0b' : '#ef4444';
+      return `
+        <div style="margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+            <span style="font-size:13px;font-weight:600;">${label}</span>
+            <span style="font-size:13px;color:var(--text-muted);">${actual}${unit} / ${target}${unit} <strong style="color:${color};">${pct}%</strong></span>
+          </div>
+          <div style="height:10px;background:#f1f5f9;border-radius:5px;overflow:hidden;">
+            <div style="width:${pct}%;height:100%;background:${color};border-radius:5px;transition:width .6s;"></div>
+          </div>
+        </div>`;
+    }
+
+    function openGoalModal() {
+      document.getElementById('goalModal').style.display = 'flex';
+    }
+    function closeGoalModal() {
+      document.getElementById('goalModal').style.display = 'none';
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('goalForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        Loading.show();
+        try {
+          await API.goals.save({
+            year:           currentYear,
+            month:          currentMonth,
+            deal_count:     parseInt(document.getElementById('g_deal_count').value) || null,
+            revenue:        parseInt(document.getElementById('g_revenue').value)    || null,
+            activity_count: parseInt(document.getElementById('g_activity').value)   || null,
+          });
+          closeGoalModal();
+          Toast.success('目標を保存しました');
+          const d = await API.dashboard.stats();
+          renderGoal(d.goal, d.actual);
+        } catch(e) {
+          Toast.error('保存エラー: ' + e.message);
+        } finally {
+          Loading.hide();
+        }
+      });
+    });
   </script>
+
+  <!-- 目標設定モーダル -->
+  <div id="goalModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:10px;padding:28px;width:420px;max-width:95vw;">
+      <h2 style="font-size:16px;font-weight:700;margin-bottom:20px;">今月の目標を設定</h2>
+      <form id="goalForm">
+        <div class="form-group">
+          <label class="form-label">受注件数 目標</label>
+          <input type="number" class="form-input" id="g_deal_count" min="0" placeholder="例: 3">
+        </div>
+        <div class="form-group">
+          <label class="form-label">受注金額 目標（円）</label>
+          <input type="number" class="form-input" id="g_revenue" min="0" step="10000" placeholder="例: 3000000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">活動数 目標（今週）</label>
+          <input type="number" class="form-input" id="g_activity" min="0" placeholder="例: 20">
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+          <button type="button" class="btn btn-ghost" onclick="closeGoalModal()">キャンセル</button>
+          <button type="submit" class="btn btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
 </body>
 </html>
