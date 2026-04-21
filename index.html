@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ダッシュボード | アスナロ SFA</title>
   <link rel="stylesheet" href="/assets/css/main.css">
+  <script>
+    // 招待/パスワードリセットトークンを他スクリプトより先に処理
+    (function() {
+      var h = window.location.hash;
+      if (h.includes('invite_token=') || h.includes('recovery_token=') || h.includes('confirmation_token=')) {
+        location.replace('/login.html' + h);
+      }
+    })();
+  </script>
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
@@ -289,6 +298,15 @@
 
       </div>
 
+      <!-- タスクウィジェット -->
+      <div id="taskSection" class="card" style="margin-bottom:14px;display:none;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div class="s-title" style="margin-bottom:0;">ネクストアクション</div>
+          <span id="taskPendingBadge" style="font-size:12px;color:var(--text-muted);"></span>
+        </div>
+        <div id="taskWidgetContent"></div>
+      </div>
+
       <!-- 2段目: 直近案件 / 活動 -->
       <div class="db-row col2-1">
 
@@ -342,6 +360,7 @@
         renderMembers(d.recent_deals);
         renderDeals(d.recent_deals);
         renderActivities(d.recent_activities);
+        if (d.tasks) renderTaskWidget(d.tasks);
       } catch(e) {
         Toast.error('データ取得エラー: ' + e.message);
       }
@@ -439,6 +458,53 @@
             <div class="act-meta">${a.type} · ${a.user_name||''} · ${fmtDate(a.activity_date)}</div>
           </div>
         </div>`).join('');
+    }
+
+    // ===== タスクウィジェット =====
+    function renderTaskWidget(tasks) {
+      const section = document.getElementById('taskSection');
+      const content = document.getElementById('taskWidgetContent');
+      const badge   = document.getElementById('taskPendingBadge');
+
+      const total = tasks.overdue.length + tasks.today.length + tasks.upcoming.length;
+      if (total === 0) return; // タスクなしは表示しない
+
+      section.style.display = 'block';
+      badge.textContent = `未完了 ${tasks.pending_count}件`;
+
+      const rows = [];
+
+      tasks.overdue.forEach(t => {
+        rows.push(taskRow(t, '#fef2f2', '#ef4444', '⚠️ 期限超過'));
+      });
+      tasks.today.forEach(t => {
+        rows.push(taskRow(t, '#fffbeb', '#f59e0b', '今日期限'));
+      });
+      tasks.upcoming.forEach(t => {
+        rows.push(taskRow(t, '#fff', 'var(--text-muted)', fmtDate(t.due_date)));
+      });
+
+      content.innerHTML = rows.join('');
+    }
+
+    function taskRow(t, bg, color, label) {
+      const link = t.deal_id
+        ? `/deals/detail.html?id=${t.deal_id}`
+        : t.customer_id ? `/customers/detail.html?id=${t.customer_id}` : null;
+      const nameEl = link
+        ? `<a href="${link}" style="color:var(--accent);text-decoration:none;font-size:11px;">${t.deal_id ? '案件' : '顧客'}を開く →</a>`
+        : '';
+      return `
+        <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #f1f5f9;background:${bg};border-radius:6px;padding:10px 12px;margin-bottom:6px;">
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:var(--text);">${t.content}</div>
+            <div style="font-size:11px;color:${color};margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;">
+              <span>${label}</span>
+              ${t.assigned_to ? `<span>担当: ${t.assigned_to}</span>` : ''}
+              ${nameEl}
+            </div>
+          </div>
+        </div>`;
     }
 
     // ===== 目標達成率 =====

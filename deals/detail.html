@@ -70,8 +70,43 @@
           </div>
         </div>
 
-        <!-- 右: 活動履歴 -->
+        <!-- 右: タスク + 活動履歴 -->
         <div>
+
+          <!-- ネクストアクション -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+              <span>ネクストアクション</span>
+              <button class="btn btn-secondary btn-sm" id="addTaskToggleBtn">+ 追加</button>
+            </div>
+
+            <!-- タスク追加フォーム（初期非表示） -->
+            <div id="taskAddForm" style="display:none;margin-bottom:14px;padding:12px;background:var(--bg);border-radius:8px;">
+              <div class="form-group" style="margin-bottom:8px;">
+                <textarea class="form-textarea" id="taskContent" placeholder="アクション内容..." style="min-height:60px;"></textarea>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" style="font-size:11px;">期日</label>
+                  <input type="date" class="form-input" id="taskDueDate">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" style="font-size:11px;">担当者</label>
+                  <input type="text" class="form-input" id="taskAssignedTo" placeholder="メールアドレス">
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-primary btn-sm" id="saveTaskBtn">保存</button>
+                <button class="btn btn-ghost btn-sm" id="cancelTaskBtn">キャンセル</button>
+              </div>
+            </div>
+
+            <!-- タスクリスト -->
+            <div id="taskList">
+              <div style="text-align:center;font-size:12px;color:var(--text-muted);padding:12px;">タスクなし</div>
+            </div>
+          </div>
+
           <div class="card">
             <div class="card-title">活動履歴</div>
 
@@ -263,6 +298,30 @@
           document.getElementById('phaseBadgeHeader').innerHTML = phaseBadge(data.phase);
         }
       } catch(e) {
+        if (e.status === 409 && e.data?.duplicate) {
+          Loading.hide();
+          const go = confirm(`⚠️ 重複チェック\n${e.data.error}\n\nそれでも登録しますか？`);
+          if (go) {
+            Loading.show();
+            try {
+              const data2 = collectFormData();
+              data2.company_name = document.getElementById('deal_company_name').value.trim();
+              const amtVal = document.getElementById('deal_expected_amount').value;
+              data2.expected_amount = amtVal !== '' ? parseInt(amtVal) : null;
+              const custId = document.getElementById('deal_customer_id').value;
+              if (custId) data2.customer_id = custId;
+              data2.force = true;
+              const created = await API.deals.create(data2);
+              Toast.success('案件を作成しました');
+              location.href = `/deals/detail.html?id=${created.id}`;
+            } catch(e2) {
+              Toast.error('保存エラー: ' + e2.message);
+            } finally {
+              Loading.hide();
+            }
+          }
+          return;
+        }
         Toast.error('保存エラー: ' + e.message);
       } finally {
         Loading.hide();
@@ -300,11 +359,97 @@
       }
     });
 
+    // ===== ネクストアクション（タスク） =====
+    document.getElementById('addTaskToggleBtn').addEventListener('click', () => {
+      const form = document.getElementById('taskAddForm');
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+      if (form.style.display === 'block') {
+        // 担当者デフォルト = ログインユーザー
+        const user = netlifyIdentity.currentUser();
+        if (user?.email) document.getElementById('taskAssignedTo').value = user.email;
+      }
+    });
+    document.getElementById('cancelTaskBtn').addEventListener('click', () => {
+      document.getElementById('taskAddForm').style.display = 'none';
+    });
+
+    document.getElementById('saveTaskBtn').addEventListener('click', async () => {
+      const content = document.getElementById('taskContent').value.trim();
+      if (!content) { Toast.error('内容を入力してください'); return; }
+      if (!dealId) { Toast.error('先に案件を保存してください'); return; }
+      try {
+        await API.activities.create({
+          deal_id:     dealId,
+          is_task:     true,
+          type:        'タスク',
+          content,
+          due_date:    document.getElementById('taskDueDate').value || null,
+          assigned_to: document.getElementById('taskAssignedTo').value.trim() || null,
+          status:      'pending',
+        });
+        document.getElementById('taskContent').value = '';
+        document.getElementById('taskDueDate').value = '';
+        document.getElementById('taskAddForm').style.display = 'none';
+        Toast.success('タスクを追加しました');
+        loadActivities();
+      } catch(e) {
+        Toast.error('エラー: ' + e.message);
+      }
+    });
+
+    async function toggleTaskDone(id, currentStatus) {
+      try {
+        await API.activities.update({ id, status: currentStatus === 'done' ? 'pending' : 'done' });
+        loadActivities();
+      } catch(e) {
+        Toast.error('エラー: ' + e.message);
+      }
+    }
+
+    function renderTasks(items) {
+      const el = document.getElementById('taskList');
+      const tasks = items.filter(a => a.is_task);
+      if (!tasks.length) {
+        el.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--text-muted);padding:12px;">タスクなし</div>';
+        return;
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      el.innerHTML = tasks.map(t => {
+        const done = t.status === 'done';
+        const overdue = t.due_date && t.due_date < today && !done;
+        const dueColor = overdue ? '#ef4444' : (t.due_date === today ? '#f59e0b' : 'var(--text-muted)');
+        return `
+          <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
+            <input type="checkbox" ${done ? 'checked' : ''} onchange="toggleTaskDone('${t.id}','${t.status}')"
+              style="margin-top:3px;cursor:pointer;width:15px;height:15px;flex-shrink:0;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:600;color:var(--text);${done ? 'text-decoration:line-through;opacity:.5;' : ''}">${t.content}</div>
+              <div style="font-size:11px;color:${dueColor};margin-top:3px;">
+                ${t.due_date ? (overdue ? '⚠️ 期限超過: ' : '期日: ') + fmtDate(t.due_date) : '期日なし'}
+                ${t.assigned_to ? ' ・ ' + t.assigned_to : ''}
+              </div>
+            </div>
+            <button onclick="deleteTask('${t.id}')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px;padding:0 2px;flex-shrink:0;" title="削除">×</button>
+          </div>`;
+      }).join('');
+    }
+
+    async function deleteTask(id) {
+      if (!confirm('このタスクを削除しますか？')) return;
+      try {
+        await API.activities.delete(id);
+        loadActivities();
+      } catch(e) {
+        Toast.error('削除エラー: ' + e.message);
+      }
+    }
+
     // ===== 活動履歴 =====
     async function loadActivities() {
       if (!dealId) return;
-      const activities = await API.activities.listByDeal(dealId);
-      renderActivities(activities);
+      const all = await API.activities.listByDeal(dealId);
+      renderTasks(all);
+      renderActivities(all.filter(a => !a.is_task));
     }
 
     function renderActivities(activities) {

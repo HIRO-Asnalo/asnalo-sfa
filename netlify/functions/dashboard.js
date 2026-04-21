@@ -17,12 +17,13 @@ exports.handler = async (event) => {
     const thisYear  = String(now2.getFullYear());
     const thisMonthNum = String(now2.getMonth() + 1);
 
-    const [deals, customers, activities, maSends, goalRows] = await Promise.all([
+    const [deals, customers, activities, maSends, goalRows, allTasks] = await Promise.all([
       getRows('deals'),
       getRows('customers'),
       getRows('activities'),
       getRows('ma_sends'),
       getRows('goals', { year: thisYear, month: thisMonthNum }),
+      getRows('activities', { is_task: true }),
     ]);
 
     const now = new Date();
@@ -89,6 +90,16 @@ exports.handler = async (event) => {
       .sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''))
       .slice(0, 10);
 
+    // タスクサマリー（未完了のみ）
+    const today = now.toISOString().slice(0, 10);
+    const pendingTasks = allTasks.filter(t => t.status !== 'done');
+    const overdueTasks = pendingTasks.filter(t => t.due_date && t.due_date < today);
+    const todayTasks   = pendingTasks.filter(t => t.due_date === today);
+    const upcomingTasks = pendingTasks
+      .filter(t => t.due_date && t.due_date > today)
+      .sort((a, b) => a.due_date.localeCompare(b.due_date))
+      .slice(0, 5);
+
     return response(200, {
       summary: {
         active_deals:       activeDeals.length,
@@ -115,6 +126,12 @@ exports.handler = async (event) => {
       phase_count:        phaseCount,
       recent_deals:       recentDeals,
       recent_activities:  recentActivities,
+      tasks: {
+        pending_count: pendingTasks.length,
+        overdue:       overdueTasks,
+        today:         todayTasks,
+        upcoming:      upcomingTasks,
+      },
     });
   } catch (err) {
     console.error('dashboard error:', err);

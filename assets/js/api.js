@@ -20,7 +20,12 @@ const API = (() => {
     const res = await fetch(BASE + path, opts);
     if (res.status === 204) return null;
     const data = await res.json();
-    if (!res.ok) throw new Error((data.error || `HTTP ${res.status}`) + (data.debug ? ` [${data.debug}]` : ''));
+    if (!res.ok) {
+      const err = new Error((data.error || `HTTP ${res.status}`) + (data.debug ? ` [${data.debug}]` : ''));
+      err.status = res.status;
+      err.data = data;
+      throw err;
+    }
     return data;
   }
 
@@ -54,7 +59,9 @@ const API = (() => {
   const activities = {
     listByDeal:     (deal_id)     => request('GET',    `/activities?deal_id=${deal_id}`),
     listByCustomer: (customer_id) => request('GET',    `/activities?customer_id=${customer_id}`),
+    listTasks:      (assigned_to) => request('GET',    `/activities?tasks=true${assigned_to ? '&assigned_to=' + encodeURIComponent(assigned_to) : ''}`),
     create: (data)                => request('POST',   '/activities', data),
+    update: (data)                => request('PUT',    '/activities', data),
     delete: (id)                  => request('DELETE', `/activities?id=${id}`),
   };
 
@@ -74,6 +81,11 @@ const API = (() => {
     generate: (type, data) => request('POST', '/ai-generate', { type, data }),
   };
 
+  // ===== Reports =====
+  const reports = {
+    monthly: (year, month) => request('POST', `/monthly-report?year=${year}&month=${month}`),
+  };
+
   // ===== MA =====
   const ma = {
     logs:           (sequence_id)   => request('GET',    `/ma-logs?sequence_id=${sequence_id}`),
@@ -89,5 +101,5 @@ const API = (() => {
     sendPending:    ()              => request('POST',   '/ma-send', {}),
   };
 
-  return { deals, customers, fields, activities, dashboard, ai, ma, goals };
+  return { deals, customers, fields, activities, dashboard, ai, ma, goals, reports };
 })();

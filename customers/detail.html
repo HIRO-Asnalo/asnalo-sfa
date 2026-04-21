@@ -32,6 +32,7 @@
       <div class="page-actions">
         <button class="btn btn-ghost btn-sm" id="aiAnalysisBtn">🤖 CS分析</button>
         <button class="btn btn-ghost btn-sm" id="aiRenewalBtn">🤖 更新提案メール</button>
+        <button class="btn btn-ghost btn-sm" id="maEnrollBtn">📧 MAシナリオ登録</button>
         <button class="btn btn-danger btn-sm" id="deleteBtn">削除</button>
         <button class="btn btn-primary" id="saveBtn">保存</button>
       </div>
@@ -330,8 +331,39 @@
           </div>
         </div>
 
-        <!-- 右: 活動履歴 -->
+        <!-- 右: タスク + 活動履歴 -->
         <div style="display:flex;flex-direction:column;gap:16px;">
+
+          <!-- ネクストアクション -->
+          <div class="card">
+            <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+              <span>ネクストアクション</span>
+              <button class="btn btn-secondary btn-sm" id="addTaskToggleBtn">+ 追加</button>
+            </div>
+            <div id="taskAddForm" style="display:none;margin-bottom:14px;padding:12px;background:var(--bg);border-radius:8px;">
+              <div class="form-group" style="margin-bottom:8px;">
+                <textarea class="form-textarea" id="taskContent" placeholder="アクション内容..." style="min-height:60px;"></textarea>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" style="font-size:11px;">期日</label>
+                  <input type="date" class="form-input" id="taskDueDate">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                  <label class="form-label" style="font-size:11px;">担当者</label>
+                  <input type="text" class="form-input" id="taskAssignedTo" placeholder="メールアドレス">
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;">
+                <button class="btn btn-primary btn-sm" id="saveTaskBtn">保存</button>
+                <button class="btn btn-ghost btn-sm" id="cancelTaskBtn">キャンセル</button>
+              </div>
+            </div>
+            <div id="taskList">
+              <div style="text-align:center;font-size:12px;color:var(--text-muted);padding:12px;">タスクなし</div>
+            </div>
+          </div>
+
           <div class="card">
             <div class="card-title">活動履歴</div>
             <div style="margin-bottom:12px;">
@@ -348,6 +380,21 @@
       </div>
     </div>
   </main>
+
+  <!-- MAシナリオ登録モーダル -->
+  <div id="maEnrollModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:28px;width:420px;max-width:95vw;box-shadow:0 16px 48px rgba(0,0,0,.18);">
+      <div style="font-size:15px;font-weight:800;color:var(--primary);margin-bottom:18px;">📧 MAシナリオに登録</div>
+      <div class="form-group" style="margin-bottom:20px;">
+        <label class="form-label">シナリオを選択</label>
+        <select class="form-select" id="maSeqSelect"><option value="">読み込み中...</option></select>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="closeMAEnrollModal()">キャンセル</button>
+        <button class="btn btn-primary" onclick="enrollToMA()">登録する</button>
+      </div>
+    </div>
+  </div>
 
   <script src="/assets/js/auth.js"></script>
   <script src="/assets/js/api.js"></script>
@@ -431,9 +478,10 @@
           if (el) { if (el.tagName === 'SELECT') el.value = customer[k]||''; else el.value = customer[k]||''; }
         });
 
-        // 活動履歴
+        // 活動履歴 + タスク
         const activities = await API.activities.listByCustomer(customerId);
-        renderActivities(activities);
+        renderTasks(activities);
+        renderActivities(activities.filter(a => !a.is_task));
 
       } catch(e) {
         Toast.error('データ取得エラー: ' + e.message);
@@ -441,6 +489,90 @@
         Loading.hide();
       }
     });
+
+    // ===== ネクストアクション（タスク） =====
+    document.getElementById('addTaskToggleBtn').addEventListener('click', () => {
+      const form = document.getElementById('taskAddForm');
+      form.style.display = form.style.display === 'none' ? 'block' : 'none';
+      if (form.style.display === 'block') {
+        const user = netlifyIdentity.currentUser();
+        if (user?.email) document.getElementById('taskAssignedTo').value = user.email;
+      }
+    });
+    document.getElementById('cancelTaskBtn').addEventListener('click', () => {
+      document.getElementById('taskAddForm').style.display = 'none';
+    });
+    document.getElementById('saveTaskBtn').addEventListener('click', async () => {
+      const content = document.getElementById('taskContent').value.trim();
+      if (!content) { Toast.error('内容を入力してください'); return; }
+      try {
+        await API.activities.create({
+          customer_id: customerId,
+          is_task:     true,
+          type:        'タスク',
+          content,
+          due_date:    document.getElementById('taskDueDate').value || null,
+          assigned_to: document.getElementById('taskAssignedTo').value.trim() || null,
+          status:      'pending',
+        });
+        document.getElementById('taskContent').value = '';
+        document.getElementById('taskDueDate').value = '';
+        document.getElementById('taskAddForm').style.display = 'none';
+        Toast.success('タスクを追加しました');
+        reloadAll();
+      } catch(e) {
+        Toast.error('エラー: ' + e.message);
+      }
+    });
+
+    async function reloadAll() {
+      const all = await API.activities.listByCustomer(customerId);
+      renderTasks(all);
+      renderActivities(all.filter(a => !a.is_task));
+    }
+
+    async function toggleTaskDone(id, currentStatus) {
+      try {
+        await API.activities.update({ id, status: currentStatus === 'done' ? 'pending' : 'done' });
+        reloadAll();
+      } catch(e) { Toast.error('エラー: ' + e.message); }
+    }
+
+    async function deleteTask(id) {
+      if (!confirm('このタスクを削除しますか？')) return;
+      try {
+        await API.activities.delete(id);
+        reloadAll();
+      } catch(e) { Toast.error('削除エラー: ' + e.message); }
+    }
+
+    function renderTasks(items) {
+      const el = document.getElementById('taskList');
+      const tasks = items.filter(a => a.is_task);
+      if (!tasks.length) {
+        el.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--text-muted);padding:12px;">タスクなし</div>';
+        return;
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      el.innerHTML = tasks.map(t => {
+        const done = t.status === 'done';
+        const overdue = t.due_date && t.due_date < today && !done;
+        const dueColor = overdue ? '#ef4444' : (t.due_date === today ? '#f59e0b' : 'var(--text-muted)');
+        return `
+          <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);">
+            <input type="checkbox" ${done ? 'checked' : ''} onchange="toggleTaskDone('${t.id}','${t.status}')"
+              style="margin-top:3px;cursor:pointer;width:15px;height:15px;flex-shrink:0;">
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:600;${done ? 'text-decoration:line-through;opacity:.5;' : ''}">${t.content}</div>
+              <div style="font-size:11px;color:${dueColor};margin-top:3px;">
+                ${t.due_date ? (overdue ? '⚠️ 期限超過: ' : '期日: ') + fmtDate(t.due_date) : '期日なし'}
+                ${t.assigned_to ? ' ・ ' + t.assigned_to : ''}
+              </div>
+            </div>
+            <button onclick="deleteTask('${t.id}')" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:16px;padding:0 2px;flex-shrink:0;">×</button>
+          </div>`;
+      }).join('');
+    }
 
     function renderActivities(activities) {
       const el = document.getElementById('activityList');
@@ -558,6 +690,45 @@
     document.getElementById('aiAnalysisBtn').addEventListener('click', () => runAi('cs_analysis', 'CS分析レポート'));
     document.getElementById('aiRenewalBtn').addEventListener('click',   () => runAi('cs_renewal',  '更新提案メール'));
 
+    // ===== MAシナリオ登録 =====
+    document.getElementById('maEnrollBtn').addEventListener('click', async () => {
+      const modal = document.getElementById('maEnrollModal');
+      modal.style.display = 'flex';
+      const sel = document.getElementById('maSeqSelect');
+      sel.innerHTML = '<option value="">読み込み中...</option>';
+      try {
+        const seqs = await API.ma.listSequences();
+        if (!seqs.length) {
+          sel.innerHTML = '<option value="">シナリオがありません</option>';
+        } else {
+          sel.innerHTML = seqs.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        }
+      } catch(e) {
+        sel.innerHTML = '<option value="">取得エラー</option>';
+        Toast.error('シナリオ取得エラー: ' + e.message);
+      }
+    });
+
+    function closeMAEnrollModal() {
+      document.getElementById('maEnrollModal').style.display = 'none';
+    }
+
+    async function enrollToMA() {
+      const seq_id = document.getElementById('maSeqSelect').value;
+      if (!seq_id) { Toast.error('シナリオを選択してください'); return; }
+      Loading.show();
+      try {
+        await API.ma.enroll(seq_id, customerId);
+        Toast.success('MAシナリオに登録しました');
+        closeMAEnrollModal();
+        document.getElementById('ma_subscribed').checked = true;
+      } catch(e) {
+        Toast.error('登録エラー: ' + e.message);
+      } finally {
+        Loading.hide();
+      }
+    }
+
     // 活動追加
     document.getElementById('addActivityBtn').addEventListener('click', async () => {
       const content = document.getElementById('activityContent').value.trim();
@@ -571,8 +742,7 @@
         });
         document.getElementById('activityContent').value = '';
         Toast.success('活動を追加しました');
-        const acts = await API.activities.listByCustomer(customerId);
-        renderActivities(acts);
+        reloadAll();
       } catch(e) {
         Toast.error('エラー: ' + e.message);
       }
