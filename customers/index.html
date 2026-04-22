@@ -16,6 +16,7 @@
       <a href="/deals/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>案件管理</a>
       <a href="/customers/index.html" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>顧客管理</a>
       <a href="/ma/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>MAメール</a>
+      <a href="/prospects/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" stroke-width="2" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><path d="M11 8v6M8 11h6"/></svg>新規開拓AI</a>
       <div class="nav-section">設定</div>
       <a href="/settings/fields.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>フィールド設定</a>
     </nav>
@@ -316,7 +317,7 @@
       document.getElementById('newModal').classList.add('hidden');
     }
 
-    async function createCustomer() {
+    async function createCustomer(force = false) {
       const company_name = document.getElementById('new_company_name').value.trim();
       if (!company_name) { Toast.error('企業名を入力してください'); return; }
       try {
@@ -332,12 +333,18 @@
           cs_status:         document.getElementById('new_cs_status').value,
           onboarding_status: document.getElementById('new_onboarding_status').value,
           ma_subscribed:     'false',
+          ...(force ? { force: true } : {}),
         });
         allCustomers.unshift(newC);
         renderAll();
         closeModal();
         Toast.success('顧客を登録しました');
       } catch(e) {
+        if (e.status === 409 && e.data?.duplicate) {
+          const go = confirm(`⚠️ 重複チェック\n${e.data.error}\n\nそれでも新規登録しますか？`);
+          if (go) createCustomer(true);
+          return;
+        }
         Toast.error('登録エラー: ' + e.message);
       }
     }
@@ -378,11 +385,14 @@
 
         const headers = parseRow(lines[0]);
         const COL = {
-          company_name:  ['会社名','company_name'],
-          contact_name:  ['担当者名','担当者','contact_name'],
-          contact_title: ['役職','contact_title'],
-          contact_email: ['メール','メールアドレス','contact_email'],
-          contact_phone: ['電話','電話番号','contact_phone'],
+          company_name:    ['会社名','company_name'],
+          contact_name:    ['担当者名','担当者','contact_name'],
+          contact_title:   ['役職','contact_title'],
+          contact_email:   ['メール','メールアドレス','contact_email'],
+          contact_phone:   ['電話','電話番号','contact_phone'],
+          contract_date:   ['契約日','contract_date'],
+          contract_amount: ['契約金額','contract_amount'],
+          service_name:    ['契約サービス','サービス','service_name'],
         };
 
         importData = lines.slice(1).map(line => {
@@ -415,7 +425,7 @@
       Loading.show();
       let ok = 0, ng = 0;
       for (const row of importData) {
-        try { await API.customers.create(row); ok++; }
+        try { await API.customers.create({ ...row, force: true }); ok++; }
         catch(e) { ng++; }
       }
       Loading.hide();
