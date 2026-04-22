@@ -105,7 +105,7 @@ ${hasContext ? `## Web検索結果（リアルタイム情報）\n${searchContex
 - 採用ページ直近更新: +20点
 - 資金調達シグナル: +15点
 - 採用担当求人あり: +10点
-- 70点以上→即アプローチ / 40〜69点→ウォッチ / 39点以下→対象外
+- 70点以上→即アプローチ / 40〜69点→ウォッチリスト / 39点以下→対象外
 
 ## 出力形式
 必ず以下のJSON形式のみで出力してください（コードブロック不要）:
@@ -113,13 +113,38 @@ ${hasContext ? `## Web検索結果（リアルタイム情報）\n${searchContex
   "research": {
     "industry": "業種",
     "employee_count": "従業員数",
+    "established": "設立年月",
+    "capital": "資本金",
+    "revenue": "売上高（直近期）",
+    "group": "グループ・親会社（なければ「独立系」）",
+    "representative": "代表者名",
+    "website": "公式サイトURL（不明なら空文字）",
+    "recruit_site": "採用サイトURL（不明なら空文字）",
     "location": "所在地",
-    "overview": "事業概要（2〜3文）",
-    "signals": ["採用シグナル1", "採用シグナル2"],
-    "challenges": ["採用課題1", "採用課題2", "採用課題3"],
+    "overview": "事業概要（3〜4文）",
+    "recent_news": [
+      {"date": "YYYY年MM月", "content": "ニュース内容（1文）"}
+    ],
+    "signals": ["採用シグナル1", "採用シグナル2", "採用シグナル3"],
+    "challenges": [
+      {"title": "課題タイトル（10字以内）", "detail": "詳細説明（2〜3文）"}
+    ],
     "icp_score": 数値,
+    "icp_score_breakdown": [
+      {"item": "マイナビ新卒出稿あり", "score": 30},
+      {"item": "OfferBox出稿あり", "score": 0},
+      {"item": "採用ページ直近更新", "score": 0},
+      {"item": "資金調達シグナル", "score": 0},
+      {"item": "採用担当求人あり", "score": 0}
+    ],
     "icp_judgment": "即アプローチ または ウォッチリスト または 対象外",
-    "recommended_plan": "推奨プラン名と金額"
+    "recommended_service": "推奨サービス名（フルサポ採用Scout等）",
+    "recommended_plan": "推奨プラン名と金額",
+    "proposal_story": "提案ストーリー（どのフックで入り、どう価値提案するかを4〜5文で）",
+    "contact_tel": "代表電話番号（推定・不明なら空文字）",
+    "contact_hr": "人事担当部署・担当者（推定）",
+    "review_flags": ["要確認事項1", "要確認事項2", "要確認事項3"],
+    "confidence": "高 または 中 または 低"
   },
   "approach_mail": [
     {
@@ -173,7 +198,7 @@ exports.handler = async (event) => {
     }
 
     /* Claude で分析 + 文章生成 */
-    const raw = await callClaude(buildPrompt(company_name, searchContext), 3500);
+    const raw = await callClaude(buildPrompt(company_name, searchContext), 4500);
 
     /* JSON パース（Claudeが余分なテキストを出力した場合も対応） */
     const jsonMatch = raw.match(/\{[\s\S]*\}/);

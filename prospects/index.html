@@ -130,6 +130,46 @@
     .tag.signal { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
     .tag.challenge { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
 
+    /* 基本情報テーブル */
+    .info-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 16px; }
+    .info-table th { width: 110px; background: var(--bg); color: var(--text-muted); font-weight: 600; padding: 7px 10px; text-align: left; border: 1px solid var(--border); }
+    .info-table td { padding: 7px 10px; border: 1px solid var(--border); font-size: 13px; }
+    .info-table a { color: var(--primary); text-decoration: none; word-break: break-all; }
+
+    /* 直近ニュース */
+    .news-list { list-style: none; margin: 0; padding: 0; }
+    .news-list li { display: flex; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .news-list li:last-child { border-bottom: none; }
+    .news-date { color: var(--text-muted); font-size: 11px; white-space: nowrap; padding-top: 2px; min-width: 80px; }
+
+    /* 採用課題 */
+    .challenge-list { list-style: none; margin: 0; padding: 0; }
+    .challenge-item { padding: 10px 12px; border-left: 3px solid #fed7aa; background: #fff7ed; border-radius: 0 6px 6px 0; margin-bottom: 8px; }
+    .challenge-title { font-size: 13px; font-weight: 700; color: #c2410c; margin-bottom: 4px; }
+    .challenge-detail { font-size: 12px; color: var(--text); line-height: 1.7; }
+
+    /* ICPスコア内訳 */
+    .icp-table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+    .icp-table th { background: var(--bg); padding: 6px 10px; text-align: left; border: 1px solid var(--border); color: var(--text-muted); font-weight: 600; }
+    .icp-table td { padding: 6px 10px; border: 1px solid var(--border); }
+    .icp-table .score-cell { text-align: right; font-weight: 700; }
+    .icp-table .score-pos { color: #16a34a; }
+    .icp-table .score-zero { color: var(--text-muted); }
+
+    /* 提案ストーリー */
+    .proposal-story { background: #f0f9ff; border-left: 3px solid var(--primary); border-radius: 0 6px 6px 0; padding: 12px 16px; font-size: 13px; line-height: 1.8; color: var(--text); }
+
+    /* コンタクト・フラグ */
+    .flag-list { list-style: none; margin: 0; padding: 0; }
+    .flag-list li { padding: 5px 0; font-size: 12px; color: var(--text); border-bottom: 1px solid var(--border); display: flex; gap: 8px; }
+    .flag-list li:last-child { border-bottom: none; }
+    .flag-list li::before { content: "■"; color: #f59e0b; font-size: 10px; flex-shrink: 0; padding-top: 2px; }
+
+    .confidence-badge { display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+    .confidence-high { background: #dcfce7; color: #16a34a; }
+    .confidence-mid  { background: #fef9c3; color: #ca8a04; }
+    .confidence-low  { background: #fee2e2; color: #dc2626; }
+
     /* タブ */
     .tab-group { border-bottom: 2px solid var(--border); margin-bottom: 16px; display: flex; gap: 0; }
     .tab-btn-inner {
@@ -293,22 +333,61 @@
               <div id="realtimeBadge"></div>
             </div>
 
-            <div id="icpBadge"></div>
+            <!-- ICPバッジ -->
+            <div id="icpBadge" style="margin-bottom:14px;"></div>
 
-            <div class="research-grid" id="researchGrid"></div>
+            <!-- 基本情報テーブル -->
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">基本情報</div>
+            <table class="info-table" id="infoTable"></table>
 
-            <div style="margin-top:12px;">
-              <div style="font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">採用シグナル</div>
-              <div class="tag-list" id="signalTags"></div>
+            <!-- 事業概要 -->
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600;margin:14px 0 6px;">事業概要</div>
+            <div id="overviewText" style="font-size:13px;line-height:1.8;"></div>
+
+            <!-- 直近ニュース -->
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600;margin:14px 0 6px;">直近ニュース</div>
+            <ul class="news-list" id="newsList"></ul>
+
+            <!-- 採用シグナル -->
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600;margin:14px 0 6px;">採用シグナル</div>
+            <div class="tag-list" id="signalTags"></div>
+          </div>
+
+          <!-- 採用課題仮説 -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="section-title" style="margin-bottom:12px;">採用課題仮説</div>
+            <ul class="challenge-list" id="challengeList"></ul>
+          </div>
+
+          <!-- ICPスコア -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="section-header">
+              <div class="section-title">ICPスコア</div>
+              <div id="icpBadge2"></div>
             </div>
-            <div style="margin-top:10px;">
-              <div style="font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">採用課題（仮説）</div>
-              <div class="tag-list" id="challengeTags"></div>
-            </div>
-            <div style="margin-top:10px;">
-              <div style="font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">推奨プラン</div>
-              <div id="recommendedPlan" style="font-size:13px;font-weight:700;color:var(--primary);"></div>
-            </div>
+            <table class="icp-table">
+              <thead><tr><th>項目</th><th style="text-align:right;">配点</th></tr></thead>
+              <tbody id="icpBreakdown"></tbody>
+            </table>
+          </div>
+
+          <!-- 推奨サービス・提案ストーリー -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="section-title" style="margin-bottom:12px;">推奨サービス・提案ストーリー</div>
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:4px;">推奨サービス</div>
+            <div id="recommendedService" style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:4px;"></div>
+            <div id="recommendedPlan" style="font-size:12px;color:var(--text-muted);margin-bottom:14px;"></div>
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">提案ストーリー</div>
+            <div class="proposal-story" id="proposalStory"></div>
+          </div>
+
+          <!-- コンタクト情報・要確認事項 -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="section-title" style="margin-bottom:12px;">コンタクト情報・要確認事項</div>
+            <table class="info-table" style="margin-bottom:14px;" id="contactTable"></table>
+            <div style="font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">要確認事項（レビューフラグ）</div>
+            <ul class="flag-list" id="reviewFlags"></ul>
+            <div style="margin-top:10px;font-size:12px;">信頼度: <span id="confidenceBadge"></span></div>
           </div>
 
           <!-- アプローチメール -->
@@ -439,27 +518,78 @@
       /* ICPバッジ */
       const score = r.icp_score || 0;
       const cls = score >= 70 ? 'green' : score >= 40 ? 'yellow' : 'red';
-      document.getElementById('icpBadge').innerHTML =
-        `<div class="icp-badge ${cls}"><span class="icp-score-num">${score}</span>点 — ${r.icp_judgment}</div>`;
+      const icpHtml = `<div class="icp-badge ${cls}"><span class="icp-score-num">${score}</span>点 — ${r.icp_judgment || '—'}</div>`;
+      document.getElementById('icpBadge').innerHTML  = icpHtml;
+      document.getElementById('icpBadge2').innerHTML = icpHtml;
 
-      /* 基本情報グリッド */
-      document.getElementById('researchGrid').innerHTML = [
+      /* 基本情報テーブル */
+      const infoRows = [
         ['業種', r.industry], ['従業員数', r.employee_count],
-        ['所在地', r.location], ['事業概要', r.overview],
-      ].map(([label, val]) => `
-        <div class="research-item">
-          <div class="research-label">${label}</div>
-          <div class="research-value">${val || '—'}</div>
-        </div>`).join('');
+        ['設立', r.established], ['資本金', r.capital],
+        ['売上高', r.revenue], ['グループ', r.group],
+        ['代表者', r.representative], ['所在地', r.location],
+        ['公式サイト', r.website ? `<a href="${r.website}" target="_blank">${r.website}</a>` : '—'],
+        ['採用サイト', r.recruit_site ? `<a href="${r.recruit_site}" target="_blank">${r.recruit_site}</a>` : '—'],
+      ];
+      document.getElementById('infoTable').innerHTML =
+        infoRows.map(([k,v]) => `<tr><th>${k}</th><td>${v || '—'}</td></tr>`).join('');
 
-      /* シグナル・課題タグ */
+      /* 事業概要 */
+      document.getElementById('overviewText').textContent = r.overview || '—';
+
+      /* 直近ニュース */
+      document.getElementById('newsList').innerHTML =
+        (r.recent_news || []).map(n =>
+          `<li><span class="news-date">${n.date || ''}</span><span>${n.content || ''}</span></li>`
+        ).join('') || '<li><span style="color:var(--text-muted)">情報なし</span></li>';
+
+      /* 採用シグナル */
       document.getElementById('signalTags').innerHTML =
         (r.signals || []).map(s => `<span class="tag signal">${s}</span>`).join('');
-      document.getElementById('challengeTags').innerHTML =
-        (r.challenges || []).map(c => `<span class="tag challenge">${c}</span>`).join('');
 
-      /* 推奨プラン */
+      /* 採用課題仮説 */
+      document.getElementById('challengeList').innerHTML =
+        (r.challenges || []).map((c, i) => {
+          const title  = typeof c === 'object' ? c.title  : c;
+          const detail = typeof c === 'object' ? c.detail : '';
+          return `<li class="challenge-item">
+            <div class="challenge-title">${i+1}. ${title}</div>
+            ${detail ? `<div class="challenge-detail">${detail}</div>` : ''}
+          </li>`;
+        }).join('');
+
+      /* ICPスコア内訳 */
+      document.getElementById('icpBreakdown').innerHTML =
+        (r.icp_score_breakdown || []).map(b => {
+          const sc = b.score || 0;
+          return `<tr>
+            <td>${b.item}</td>
+            <td class="score-cell ${sc > 0 ? 'score-pos' : 'score-zero'}">+${sc}点</td>
+          </tr>`;
+        }).join('') + `<tr style="font-weight:700;background:var(--bg);">
+          <td>合計</td><td class="score-cell">${score}点</td>
+        </tr>`;
+
+      /* 推奨サービス・提案ストーリー */
+      document.getElementById('recommendedService').textContent = r.recommended_service || '—';
       document.getElementById('recommendedPlan').textContent = r.recommended_plan || '—';
+      document.getElementById('proposalStory').textContent = r.proposal_story || '—';
+
+      /* コンタクト情報 */
+      document.getElementById('contactTable').innerHTML = [
+        ['TEL', r.contact_tel || '（要確認）'],
+        ['人事担当', r.contact_hr || '（要確認）'],
+      ].map(([k,v]) => `<tr><th>${k}</th><td>${v}</td></tr>`).join('');
+
+      /* 要確認事項 */
+      document.getElementById('reviewFlags').innerHTML =
+        (r.review_flags || []).map(f => `<li>${f}</li>`).join('');
+
+      /* 信頼度 */
+      const conf = r.confidence || '中';
+      const confCls = conf === '高' ? 'confidence-high' : conf === '低' ? 'confidence-low' : 'confidence-mid';
+      document.getElementById('confidenceBadge').innerHTML =
+        `<span class="confidence-badge ${confCls}">${conf}</span>`;
 
       /* アプローチメール */
       const [mA, mB] = data.approach_mail || [{}, {}];
@@ -493,16 +623,17 @@
         const r = _lastResult.research;
         const [mA] = _lastResult.approach_mail || [{}];
 
+        const challengeTitles = (r.challenges || []).map(c => typeof c === 'object' ? c.title : c);
         const dealData = {
           company_name:    _lastResult.company_name,
           deal_name:       `${_lastResult.company_name} フルサポ採用Scout提案`,
           phase:           'リード',
           industry:        r.industry        || '',
-          pain_assumption: (r.challenges || []).join(' / '),
-          needs:           r.challenges?.[0] || '',
+          pain_assumption: challengeTitles.join(' / '),
+          needs:           challengeTitles[0] || '',
           budget:          r.recommended_plan || '',
           next_action:     mA.subject ? `アプローチ送付：${mA.subject}` : 'アプローチメール送付',
-          memo:            `ICPスコア: ${r.icp_score}点（${r.icp_judgment}）\n採用シグナル: ${(r.signals || []).join(', ')}`,
+          memo:            `ICPスコア: ${r.icp_score}点（${r.icp_judgment}）\n推奨: ${r.recommended_service || ''}\n採用シグナル: ${(r.signals || []).join(', ')}`,
         };
 
         const created = await API.deals.create(dealData);
