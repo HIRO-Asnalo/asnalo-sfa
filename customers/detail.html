@@ -204,6 +204,63 @@
               </div>
             </div>
 
+            <!-- 契約履歴（複数契約対応） -->
+            <div class="card" style="margin-bottom:14px;">
+              <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;">
+                <span>契約履歴</span>
+                <button class="btn btn-secondary btn-sm" id="addContractBtn">+ 契約を追加</button>
+              </div>
+
+              <!-- 契約追加/編集フォーム（初期非表示） -->
+              <div id="contractForm" style="display:none;background:var(--bg);border-radius:8px;padding:14px;margin-bottom:14px;">
+                <input type="hidden" id="editContractId">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label class="form-label">サービス名</label>
+                    <select class="form-select" id="cf_service_name">
+                      <option value="">選択</option>
+                      <option>フルサポ採用</option>
+                      <option>DR運用代行</option>
+                      <option>CLUTCH Agent</option>
+                      <option>その他</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">ステータス</label>
+                    <select class="form-select" id="cf_status">
+                      <option value="active">稼働中</option>
+                      <option value="ended">終了</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">契約開始日</label>
+                    <input type="date" class="form-input" id="cf_contract_date">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">契約終了日</label>
+                    <input type="date" class="form-input" id="cf_contract_end_date">
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">契約金額（円）</label>
+                    <input type="number" class="form-input" id="cf_contract_amount" placeholder="0" min="0">
+                  </div>
+                  <div class="form-group form-full">
+                    <label class="form-label">メモ</label>
+                    <textarea class="form-textarea" id="cf_notes" style="min-height:60px;"></textarea>
+                  </div>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:4px;">
+                  <button class="btn btn-primary btn-sm" id="saveContractBtn">保存</button>
+                  <button class="btn btn-ghost btn-sm" id="cancelContractBtn">キャンセル</button>
+                </div>
+              </div>
+
+              <!-- 契約リスト -->
+              <div id="contractList">
+                <div style="text-align:center;font-size:12px;color:var(--text-muted);padding:12px;">契約履歴なし</div>
+              </div>
+            </div>
+
             <!-- 顧客コンディション -->
             <div class="card" style="margin-bottom:14px;">
               <div class="card-title">顧客コンディション</div>
@@ -484,6 +541,9 @@
         renderTasks(activities);
         renderActivities(activities.filter(a => !a.is_task));
 
+        // 契約履歴
+        loadContracts();
+
       } catch(e) {
         Toast.error('データ取得エラー: ' + e.message);
       } finally {
@@ -525,6 +585,116 @@
         Toast.error('エラー: ' + e.message);
       }
     });
+
+    // ===== 契約履歴 =====
+    async function loadContracts() {
+      if (!customerId) return;
+      try {
+        const list = await API.contracts.list(customerId);
+        renderContracts(list);
+      } catch(e) { /* テーブル未作成時は無視 */ }
+    }
+
+    function renderContracts(list) {
+      const el = document.getElementById('contractList');
+      if (!list?.length) {
+        el.innerHTML = '<div style="text-align:center;font-size:12px;color:var(--text-muted);padding:12px;">契約履歴なし</div>';
+        return;
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      el.innerHTML = list.map(c => {
+        const active = c.status === 'active';
+        const badge = active
+          ? '<span style="font-size:11px;font-weight:700;background:#dcfce7;color:#166534;padding:2px 8px;border-radius:10px;">稼働中</span>'
+          : '<span style="font-size:11px;font-weight:700;background:#f1f5f9;color:#64748b;padding:2px 8px;border-radius:10px;">終了</span>';
+        const amount = c.contract_amount ? `¥${Number(c.contract_amount).toLocaleString()}` : '—';
+        const period = [c.contract_date, c.contract_end_date].filter(Boolean).map(d => fmtDate(d)).join(' 〜 ') || '—';
+        return `
+          <div style="padding:12px 0;border-bottom:1px solid var(--border);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+              ${badge}
+              <span style="font-size:14px;font-weight:700;">${c.service_name || '—'}</span>
+              <span style="font-size:12px;color:var(--text-muted);margin-left:auto;">${amount}</span>
+              <button onclick="editContract('${c.id}')" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--accent);padding:0 4px;">編集</button>
+              <button onclick="deleteContract('${c.id}')" style="background:none;border:none;cursor:pointer;font-size:16px;color:var(--text-muted);padding:0 2px;">×</button>
+            </div>
+            <div style="font-size:11px;color:var(--text-muted);">期間: ${period}</div>
+            ${c.notes ? `<div style="font-size:12px;color:var(--text);margin-top:4px;">${c.notes}</div>` : ''}
+          </div>`;
+      }).join('');
+    }
+
+    // 契約フォーム開閉
+    document.getElementById('addContractBtn').addEventListener('click', () => {
+      document.getElementById('editContractId').value = '';
+      document.getElementById('cf_service_name').value = '';
+      document.getElementById('cf_status').value = 'active';
+      document.getElementById('cf_contract_date').value = '';
+      document.getElementById('cf_contract_end_date').value = '';
+      document.getElementById('cf_contract_amount').value = '';
+      document.getElementById('cf_notes').value = '';
+      document.getElementById('contractForm').style.display = 'block';
+      document.getElementById('addContractBtn').style.display = 'none';
+    });
+    document.getElementById('cancelContractBtn').addEventListener('click', () => {
+      document.getElementById('contractForm').style.display = 'none';
+      document.getElementById('addContractBtn').style.display = 'inline-flex';
+    });
+
+    // 編集モード
+    async function editContract(id) {
+      const list = await API.contracts.list(customerId);
+      const c = list.find(x => x.id === id);
+      if (!c) return;
+      document.getElementById('editContractId').value = c.id;
+      document.getElementById('cf_service_name').value = c.service_name || '';
+      document.getElementById('cf_status').value = c.status || 'active';
+      document.getElementById('cf_contract_date').value = c.contract_date || '';
+      document.getElementById('cf_contract_end_date').value = c.contract_end_date || '';
+      document.getElementById('cf_contract_amount').value = c.contract_amount || '';
+      document.getElementById('cf_notes').value = c.notes || '';
+      document.getElementById('contractForm').style.display = 'block';
+      document.getElementById('addContractBtn').style.display = 'none';
+    }
+
+    // 保存（追加 or 更新）
+    document.getElementById('saveContractBtn').addEventListener('click', async () => {
+      const editId = document.getElementById('editContractId').value;
+      const payload = {
+        customer_id:       customerId,
+        service_name:      document.getElementById('cf_service_name').value,
+        status:            document.getElementById('cf_status').value,
+        contract_date:     document.getElementById('cf_contract_date').value || null,
+        contract_end_date: document.getElementById('cf_contract_end_date').value || null,
+        contract_amount:   document.getElementById('cf_contract_amount').value || null,
+        notes:             document.getElementById('cf_notes').value,
+      };
+      try {
+        if (editId) {
+          await API.contracts.update({ id: editId, ...payload });
+          Toast.success('契約を更新しました');
+        } else {
+          await API.contracts.create(payload);
+          Toast.success('契約を追加しました');
+        }
+        document.getElementById('contractForm').style.display = 'none';
+        document.getElementById('addContractBtn').style.display = 'inline-flex';
+        loadContracts();
+      } catch(e) {
+        Toast.error('エラー: ' + e.message);
+      }
+    });
+
+    async function deleteContract(id) {
+      if (!confirm('この契約履歴を削除しますか？')) return;
+      try {
+        await API.contracts.delete(id);
+        Toast.success('削除しました');
+        loadContracts();
+      } catch(e) {
+        Toast.error('削除エラー: ' + e.message);
+      }
+    }
 
     async function reloadAll() {
       const all = await API.activities.listByCustomer(customerId);

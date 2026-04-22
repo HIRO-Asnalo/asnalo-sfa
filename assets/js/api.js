@@ -81,6 +81,14 @@ const API = (() => {
     generate: (type, data) => request('POST', '/ai-generate', { type, data }),
   };
 
+  // ===== Contracts =====
+  const contracts = {
+    list:   (customer_id) => request('GET',    `/contracts?customer_id=${customer_id}`),
+    create: (data)        => request('POST',   '/contracts', data),
+    update: (data)        => request('PUT',    '/contracts', data),
+    delete: (id)          => request('DELETE', `/contracts?id=${id}`),
+  };
+
   // ===== Reports =====
   const reports = {
     monthly: (year, month) => request('POST', `/monthly-report?year=${year}&month=${month}`),
@@ -101,5 +109,5 @@ const API = (() => {
     sendPending:    ()              => request('POST',   '/ma-send', {}),
   };
 
-  return { deals, customers, fields, activities, dashboard, ai, ma, goals, reports };
+  return { deals, customers, fields, activities, dashboard, ai, ma, goals, reports, contracts };
 })();
