@@ -33,8 +33,23 @@ exports.handler = async (event) => {
 
       case 'POST': {
         const body = JSON.parse(event.body || '{}');
+
+        // 重複チェック（force=trueで強制登録）
+        if (!body.force && body.company_name) {
+          const existing = await getRows(TABLE, { company_name: body.company_name });
+          const active = existing.filter(d => !['受注', '失注'].includes(d.phase));
+          if (active.length > 0) {
+            return response(409, {
+              duplicate: true,
+              existing_count: active.length,
+              error: `「${body.company_name}」の進行中案件が既に${active.length}件存在します`,
+            });
+          }
+        }
+
+        const { force, ...insertData } = body;
         const now = new Date().toISOString();
-        const result = await insertRow(TABLE, { ...body, created_at: now, updated_at: now });
+        const result = await insertRow(TABLE, { ...insertData, created_at: now, updated_at: now });
         notifyDealCreated(result, auth.user?.email).catch(() => {});
         return response(201, result);
       }

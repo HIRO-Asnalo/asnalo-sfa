@@ -21,7 +21,15 @@
 
   <script>
     netlifyIdentity.on('init', user => {
-      if (user) location.href = '/';
+      if (user) {
+        location.href = '/';
+        return;
+      }
+      // init完了後にトークンを検知してウィジェットを開く
+      const hash = location.hash;
+      if (hash.includes('invite_token=') || hash.includes('recovery_token=') || hash.includes('confirmation_token=')) {
+        netlifyIdentity.open();
+      }
     });
     netlifyIdentity.on('login', () => {
       netlifyIdentity.close();

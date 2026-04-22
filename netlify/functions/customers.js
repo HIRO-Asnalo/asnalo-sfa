@@ -33,10 +33,24 @@ exports.handler = async (event) => {
       case 'POST': {
         const body = JSON.parse(event.body || '{}');
         if (!body.company_name) return response(400, { error: '顧客名は必須です' });
+
+        // 重複チェック（force=trueで強制登録）
+        if (!body.force) {
+          const existing = await getRows(TABLE, { company_name: body.company_name });
+          if (existing.length > 0) {
+            return response(409, {
+              duplicate: true,
+              existing_id: existing[0].id,
+              error: `「${body.company_name}」は既に顧客として登録されています`,
+            });
+          }
+        }
+
+        const { force, ...insertData } = body;
         const now = new Date().toISOString();
         const result = await insertRow(TABLE, {
           ma_subscribed: 'false',
-          ...body,
+          ...insertData,
           created_at: now,
           updated_at: now,
         });

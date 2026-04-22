@@ -97,4 +97,39 @@ function notifyStaleDeals(deals, staleDays) {
   });
 }
 
-module.exports = { notifyDealCreated, notifyPhaseChanged, notifyStaleDeals };
+/** 月次営業レポート通知 */
+function notifyMonthlyReport(stats, year, month) {
+  const won   = stats.won_count  || 0;
+  const lost  = stats.lost_count || 0;
+  const total = won + lost;
+  const wr    = total ? Math.round(won / total * 100) : 0;
+  const fmtAmt = (v) => v ? `¥${Number(v).toLocaleString()}` : '—';
+
+  return postToSlack({
+    blocks: [
+      { type: 'header', text: { type: 'plain_text', text: `📊 ${year}年${month}月 営業月次レポート`, emoji: true } },
+      {
+        type: 'section',
+        fields: [
+          { type: 'mrkdwn', text: `*受注件数*\n${won}件` },
+          { type: 'mrkdwn', text: `*受注金額*\n${fmtAmt(stats.revenue)}` },
+          { type: 'mrkdwn', text: `*失注件数*\n${lost}件` },
+          { type: 'mrkdwn', text: `*受注率*\n${wr}%` },
+        ],
+      },
+      {
+        type: 'section',
+        fields: [
+          { type: 'mrkdwn', text: `*新規案件数*\n${stats.new_deals || 0}件` },
+          { type: 'mrkdwn', text: `*パイプライン総額*\n${fmtAmt(stats.pipeline)}` },
+          { type: 'mrkdwn', text: `*活動数*\n${stats.activities || 0}件` },
+          { type: 'mrkdwn', text: `*MAメール送信数*\n${stats.ma_sent || 0}件` },
+        ],
+      },
+      { type: 'divider' },
+      { type: 'context', elements: [{ type: 'mrkdwn', text: `自動生成レポート · ${year}年${month}月末時点` }] },
+    ],
+  });
+}
+
+module.exports = { notifyDealCreated, notifyPhaseChanged, notifyStaleDeals, notifyMonthlyReport };

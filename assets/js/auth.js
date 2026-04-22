@@ -3,6 +3,15 @@
  * Netlify Identity との連携
  */
 
+// 招待/パスワードリセットのトークンがある場合、login.htmlへ即リダイレクト（同期処理）
+;(function() {
+  const hash = window.location.hash;
+  const isToken = hash.includes('invite_token=') || hash.includes('recovery_token=') || hash.includes('confirmation_token=');
+  if (isToken && !location.pathname.includes('login')) {
+    location.replace('/login.html' + hash);
+  }
+})();
+
 const Auth = (() => {
   let _user = null;
 
