@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>新規開拓AI | アスナロ SFA</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <style>
+    .prospect-wrap {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 0 40px;
+    }
+    .search-card {
+      background: var(--primary);
+      border-radius: var(--radius);
+      padding: 28px 32px;
+      margin-bottom: 24px;
+      color: #fff;
+    }
+    .search-card h2 {
+      font-size: 18px;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+    .search-card p {
+      font-size: 12px;
+      opacity: .7;
+      margin-bottom: 18px;
+    }
+    .search-row {
+      display: flex;
+      gap: 10px;
+    }
+    .search-input-lg {
+      flex: 1;
+      padding: 12px 16px;
+      border-radius: 8px;
+      border: 2px solid rgba(255,255,255,.3);
+      background: rgba(255,255,255,.12);
+      color: #fff;
+      font-size: 15px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .search-input-lg::placeholder { color: rgba(255,255,255,.5); }
+    .search-input-lg:focus { border-color: var(--accent); }
+    .btn-generate {
+      padding: 12px 28px;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: background .2s;
+    }
+    .btn-generate:hover { background: var(--accent-lt); }
+    .btn-generate:disabled { background: rgba(255,255,255,.2); cursor: not-allowed; }
+
+    /* ローディング */
+    .loading-state {
+      text-align: center;
+      padding: 60px 20px;
+      display: none;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-text { color: var(--text-muted); font-size: 14px; }
+
+    /* 結果エリア */
+    .results { display: none; }
+
+    /* リサーチカード */
+    .research-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .research-item {
+      background: var(--bg);
+      border-radius: 6px;
+      padding: 10px 14px;
+    }
+    .research-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      margin-bottom: 3px;
+    }
+    .research-value { font-size: 13px; font-weight: 600; }
+
+    .icp-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: 700;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .icp-badge.green  { background: #dcfce7; color: #16a34a; }
+    .icp-badge.yellow { background: #fef9c3; color: #ca8a04; }
+    .icp-badge.red    { background: #fee2e2; color: #dc2626; }
+    .icp-score-num { font-size: 20px; font-weight: 900; }
+
+    .tag-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+    .tag {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 3px 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .tag.signal { background: #eff6ff; border-color: #bfdbfe; color: #1d4ed8; }
+    .tag.challenge { background: #fff7ed; border-color: #fed7aa; color: #c2410c; }
+
+    /* タブ */
+    .tab-group { border-bottom: 2px solid var(--border); margin-bottom: 16px; display: flex; gap: 0; }
+    .tab-btn-inner {
+      padding: 8px 18px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .tab-btn-inner.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* メール表示 */
+    .mail-subject {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+    .mail-subject span { color: var(--text); font-weight: 700; }
+    .mail-body {
+      background: var(--bg);
+      border-radius: 6px;
+      padding: 14px 16px;
+      font-size: 13px;
+      line-height: 1.75;
+      white-space: pre-wrap;
+      min-height: 120px;
+    }
+    .angle-badge {
+      display: inline-block;
+      background: #eff6ff;
+      color: #1d4ed8;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    /* コピーボタン */
+    .copy-row {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+    .btn-copy {
+      padding: 5px 14px;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all .15s;
+    }
+    .btn-copy:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn-copy.copied { background: var(--success); color: #fff; border-color: var(--success); }
+
+    /* リアルタイムバッジ */
+    .realtime-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #dcfce7;
+      color: #16a34a;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .static-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      background: #fef9c3;
+      color: #ca8a04;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--text);
+    }
+  </style>
+</head>
+<body class="app-layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-text">ASNALO SFA</div><div class="logo-sub">営業管理システム</div></div>
+    <nav class="sidebar-nav">
+      <a href="/" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>ダッシュボード</a>
+      <a href="/deals/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>案件管理</a>
+      <a href="/customers/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>顧客管理</a>
+      <a href="/ma/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>MAメール</a>
+      <a href="/prospects/index.html" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24" stroke-width="2" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><path d="M11 8v6M8 11h6"/></svg>新規開拓AI</a>
+      <div class="nav-section">設定</div>
+      <a href="/settings/fields.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>フィールド設定</a>
+    </nav>
+    <div class="sidebar-user" id="sidebarUser"></div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">新規開拓AI</h1>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">企業名を入力するだけでリサーチ・アプローチ文・フォーム文を自動生成</div>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="prospect-wrap">
+
+        <!-- 検索カード -->
+        <div class="search-card">
+          <h2>企業名を入力してください</h2>
+          <p>リサーチ → ICP採点 → アプローチメール2パターン → フォーム文 を自動生成します</p>
+          <div class="search-row">
+            <input type="text" id="companyInput" class="search-input-lg"
+              placeholder="例: 株式会社〇〇、エサキホーム …"
+              onkeydown="if(event.key==='Enter') generate()">
+            <button class="btn-generate" id="generateBtn" onclick="generate()">
+              AI生成
+            </button>
+          </div>
+        </div>
+
+        <!-- ローディング -->
+        <div class="loading-state" id="loadingState">
+          <div class="spinner"></div>
+          <div class="loading-text" id="loadingText">企業情報をリサーチ中…</div>
+        </div>
+
+        <!-- エラー -->
+        <div id="errorState" style="display:none;" class="card" style="padding:20px;color:var(--danger);text-align:center;"></div>
+
+        <!-- 結果 -->
+        <div class="results" id="results">
+
+          <!-- リサーチ結果 -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="section-header">
+              <div class="section-title" id="resultCompanyName"></div>
+              <div id="realtimeBadge"></div>
+            </div>
+
+            <div id="icpBadge"></div>
+
+            <div class="research-grid" id="researchGrid"></div>
+
+            <div style="margin-top:12px;">
+              <div style="font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">採用シグナル</div>
+              <div class="tag-list" id="signalTags"></div>
+            </div>
+            <div style="margin-top:10px;">
+              <div style="font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">採用課題（仮説）</div>
+              <div class="tag-list" id="challengeTags"></div>
+            </div>
+            <div style="margin-top:10px;">
+              <div style="font-size:11px;color:var(--text-muted);font-weight:600;margin-bottom:6px;">推奨プラン</div>
+              <div id="recommendedPlan" style="font-size:13px;font-weight:700;color:var(--primary);"></div>
+            </div>
+          </div>
+
+          <!-- アプローチメール -->
+          <div class="card" style="margin-bottom:16px;">
+            <div class="section-header">
+              <div class="section-title">アプローチメール</div>
+            </div>
+            <div class="tab-group">
+              <button class="tab-btn-inner active" onclick="switchMailTab('A',this)">パターンA</button>
+              <button class="tab-btn-inner" onclick="switchMailTab('B',this)">パターンB</button>
+            </div>
+            <div id="mailPanelA" class="tab-panel active">
+              <div class="angle-badge" id="angleA"></div>
+              <div class="mail-subject">件名: <span id="subjectA"></span></div>
+              <div class="mail-body" id="bodyA"></div>
+              <div class="copy-row">
+                <button class="btn-copy" onclick="copyText('subjectA','bodyA',this)">件名＋本文をコピー</button>
+              </div>
+            </div>
+            <div id="mailPanelB" class="tab-panel">
+              <div class="angle-badge" id="angleB"></div>
+              <div class="mail-subject">件名: <span id="subjectB"></span></div>
+              <div class="mail-body" id="bodyB"></div>
+              <div class="copy-row">
+                <button class="btn-copy" onclick="copyText('subjectB','bodyB',this)">件名＋本文をコピー</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- フォーム営業文 -->
+          <div class="card">
+            <div class="section-header">
+              <div class="section-title">フォーム営業文</div>
+            </div>
+            <div class="tab-group">
+              <button class="tab-btn-inner active" onclick="switchFormTab('short',this)">200字以内</button>
+              <button class="tab-btn-inner" onclick="switchFormTab('standard',this)">400字以内</button>
+            </div>
+            <div id="formPanelShort" class="tab-panel active">
+              <div class="mail-body" id="formShort"></div>
+              <div class="copy-row">
+                <button class="btn-copy" onclick="copySingle('formShort',this)">コピー</button>
+              </div>
+            </div>
+            <div id="formPanelStandard" class="tab-panel">
+              <div class="mail-body" id="formStandard"></div>
+              <div class="copy-row">
+                <button class="btn-copy" onclick="copySingle('formStandard',this)">コピー</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 案件登録ボタン -->
+          <div style="margin-top:16px;text-align:center;">
+            <button class="btn btn-primary" id="registerBtn" onclick="registerDeal()" style="padding:12px 36px;font-size:14px;">
+              <svg viewBox="0 0 24 24" style="width:15px;height:15px;margin-right:6px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              この企業を案件として登録
+            </button>
+            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">リサーチ内容・課題・推奨プランが自動入力されます</div>
+          </div>
+
+          <!-- 登録完了トースト -->
+          <div id="registerToast" style="display:none;margin-top:12px;background:#dcfce7;border:1px solid #86efac;border-radius:8px;padding:14px 18px;display:none;align-items:center;gap:12px;">
+            <span style="color:#16a34a;font-weight:700;">✅ 案件登録完了</span>
+            <a id="dealLink" href="#" style="color:var(--primary);font-weight:600;font-size:13px;">案件詳細を開く →</a>
+          </div>
+
+        </div><!-- /results -->
+      </div>
+    </div>
+  </main>
+
+  <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script>
+    let _lastResult = null; // 生成結果を保持
+
+    async function generate() {
+      const name = document.getElementById('companyInput').value.trim();
+      if (!name) { alert('企業名を入力してください'); return; }
+
+      setLoading(true);
+      hideResults();
+      hideError();
+
+      try {
+        const token = netlifyIdentity.currentUser()
+          ? await netlifyIdentity.currentUser().jwt()
+          : 'local-dev';
+
+        const res = await fetch('/api/ai-prospect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ company_name: name }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '生成に失敗しました');
+        renderResults(data);
+      } catch (e) {
+        showError(e.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function setLoading(on) {
+      document.getElementById('loadingState').style.display = on ? 'block' : 'none';
+      document.getElementById('generateBtn').disabled = on;
+      document.getElementById('generateBtn').textContent = on ? '生成中…' : 'AI生成';
+    }
+    function hideResults() { document.getElementById('results').style.display = 'none'; }
+    function hideError()   { document.getElementById('errorState').style.display = 'none'; }
+    function showError(msg) {
+      const el = document.getElementById('errorState');
+      el.textContent = `エラー: ${msg}`;
+      el.style.display = 'block';
+    }
+
+    function renderResults(data) {
+      const r = data.research;
+
+      /* 会社名・リアルタイムバッジ */
+      document.getElementById('resultCompanyName').textContent = data.company_name;
+      document.getElementById('realtimeBadge').innerHTML = data.realtime
+        ? '<span class="realtime-badge">● リアルタイム検索</span>'
+        : '<span class="static-badge">⚠ 学習データ（Brave APIキー未設定）</span>';
+
+      /* ICPバッジ */
+      const score = r.icp_score || 0;
+      const cls = score >= 70 ? 'green' : score >= 40 ? 'yellow' : 'red';
+      document.getElementById('icpBadge').innerHTML =
+        `<div class="icp-badge ${cls}"><span class="icp-score-num">${score}</span>点 — ${r.icp_judgment}</div>`;
+
+      /* 基本情報グリッド */
+      document.getElementById('researchGrid').innerHTML = [
+        ['業種', r.industry], ['従業員数', r.employee_count],
+        ['所在地', r.location], ['事業概要', r.overview],
+      ].map(([label, val]) => `
+        <div class="research-item">
+          <div class="research-label">${label}</div>
+          <div class="research-value">${val || '—'}</div>
+        </div>`).join('');
+
+      /* シグナル・課題タグ */
+      document.getElementById('signalTags').innerHTML =
+        (r.signals || []).map(s => `<span class="tag signal">${s}</span>`).join('');
+      document.getElementById('challengeTags').innerHTML =
+        (r.challenges || []).map(c => `<span class="tag challenge">${c}</span>`).join('');
+
+      /* 推奨プラン */
+      document.getElementById('recommendedPlan').textContent = r.recommended_plan || '—';
+
+      /* アプローチメール */
+      const [mA, mB] = data.approach_mail || [{}, {}];
+      setText('angleA',   mA.angle   || '');
+      setText('subjectA', mA.subject || '');
+      setText('bodyA',    mA.body    || '');
+      setText('angleB',   mB.angle   || '');
+      setText('subjectB', mB.subject || '');
+      setText('bodyB',    mB.body    || '');
+
+      /* フォーム文 */
+      setText('formShort',    data.form_message?.short    || '');
+      setText('formStandard', data.form_message?.standard || '');
+
+      /* 生成結果を保持（案件登録で使用） */
+      _lastResult = data;
+      document.getElementById('registerBtn').disabled = false;
+      document.getElementById('registerToast').style.display = 'none';
+
+      document.getElementById('results').style.display = 'block';
+      document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    async function registerDeal() {
+      if (!_lastResult) return;
+      const btn = document.getElementById('registerBtn');
+      btn.disabled = true;
+      btn.textContent = '登録中…';
+
+      try {
+        const r = _lastResult.research;
+        const [mA] = _lastResult.approach_mail || [{}];
+
+        const dealData = {
+          company_name:    _lastResult.company_name,
+          deal_name:       `${_lastResult.company_name} フルサポ採用Scout提案`,
+          phase:           'リード',
+          industry:        r.industry        || '',
+          pain_assumption: (r.challenges || []).join(' / '),
+          needs:           r.challenges?.[0] || '',
+          budget:          r.recommended_plan || '',
+          next_action:     mA.subject ? `アプローチ送付：${mA.subject}` : 'アプローチメール送付',
+          memo:            `ICPスコア: ${r.icp_score}点（${r.icp_judgment}）\n採用シグナル: ${(r.signals || []).join(', ')}`,
+        };
+
+        const created = await API.deals.create(dealData);
+
+        /* 重複の場合も force で登録 */
+        const deal = created.duplicate
+          ? await API.deals.create({ ...dealData, force: true })
+          : created;
+
+        document.getElementById('dealLink').href = `/deals/detail.html?id=${deal.id}`;
+        document.getElementById('registerToast').style.display = 'flex';
+        btn.textContent = '登録済み ✅';
+      } catch (e) {
+        alert('登録に失敗しました: ' + e.message);
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:15px;height:15px;margin-right:6px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>この企業を案件として登録';
+      }
+    }
+
+    function setText(id, val) {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val;
+    }
+
+    function switchMailTab(pattern, btn) {
+      ['A','B'].forEach(p => {
+        document.getElementById(`mailPanel${p}`).classList.toggle('active', p === pattern);
+      });
+      btn.closest('.tab-group').querySelectorAll('.tab-btn-inner').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function switchFormTab(type, btn) {
+      document.getElementById('formPanelShort').classList.toggle('active', type === 'short');
+      document.getElementById('formPanelStandard').classList.toggle('active', type === 'standard');
+      btn.closest('.tab-group').querySelectorAll('.tab-btn-inner').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function copyText(subjectId, bodyId, btn) {
+      const subject = document.getElementById(subjectId).textContent;
+      const body    = document.getElementById(bodyId).textContent;
+      navigator.clipboard.writeText(`件名: ${subject}\n\n${body}`).then(() => flashCopied(btn));
+    }
+
+    function copySingle(id, btn) {
+      navigator.clipboard.writeText(document.getElementById(id).textContent).then(() => flashCopied(btn));
+    }
+
+    function flashCopied(btn) {
+      btn.textContent = 'コピーしました！';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'コピー'; btn.classList.remove('copied'); }, 2000);
+    }
+  </script>
+</body>
+</html>
