@@ -149,6 +149,11 @@ exports.handler = async (event) => {
   if (auth.error) return auth;
   if (event.httpMethod !== 'POST') return response(405, { error: 'Method Not Allowed' });
 
+  /* API キー存在確認 */
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) return response(500, { error: 'ANTHROPIC_API_KEY が未設定です（Netlify環境変数を確認）' });
+  console.log('[ai-prospect] ANTHROPIC_API_KEY prefix:', apiKey.slice(0, 10));
+
   try {
     const { company_name } = JSON.parse(event.body || '{}');
     if (!company_name) return response(400, { error: '企業名が必要です' });
