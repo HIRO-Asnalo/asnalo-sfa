@@ -46,7 +46,7 @@ function braveSearch(query, apiKey) {
 function callClaude(prompt, maxTokens = 3000) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
-      model: 'claude-sonnet-4-6',
+      model: 'claude-haiku-4-5-20251001',
       max_tokens: maxTokens,
       messages: [{ role: 'user', content: prompt }],
     });
