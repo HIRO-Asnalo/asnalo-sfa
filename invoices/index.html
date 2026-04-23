@@ -52,7 +52,8 @@
     /* ===== 印刷ビュー ===== */
     .print-area { display:none; }
     @media print {
-      .app-layout, .page-header, .filter-bar, .inv-form, .no-print { display:none !important; }
+      .sidebar, .page-header, .page-body { display:none !important; }
+      .main-content { padding:0 !important; background:#fff !important; }
       .print-area { display:block !important; padding:40px; font-family:'Hiragino Kaku Gothic ProN',sans-serif; }
       .print-header { display:flex; justify-content:space-between; margin-bottom:24px; }
       .print-doc-title { font-size:26px; font-weight:900; color:#1e3a5f; }
@@ -219,8 +220,8 @@
     </div>
   </main>
 
-  <!-- 印刷エリア（印刷時のみ表示） -->
-  <div class="print-area" id="printArea"></div>
+<!-- 印刷エリア：body直下に置くことで印刷時に確実に表示 -->
+<div class="print-area" id="printArea"></div>
 
   <script src="/assets/js/auth.js"></script>
   <script src="/assets/js/api.js"></script>
