@@ -144,5 +144,37 @@ const API = (() => {
     delete:  (id)   => request('DELETE', `/documents?id=${id}`),
   };
 
-  return { deals, customers, fields, activities, dashboard, ai, ma, goals, reports, contracts, announcements, wiki, documents };
+  // ===== Appointments =====
+  const appointments = {
+    list: (opts = {}) => {
+      const q = new URLSearchParams();
+      if (opts.start)       q.set('start', opts.start);
+      if (opts.end)         q.set('end',   opts.end);
+      if (opts.deal_id)     q.set('deal_id', opts.deal_id);
+      if (opts.assigned_to) q.set('assigned_to', opts.assigned_to);
+      return request('GET', `/appointments${q.toString() ? '?' + q.toString() : ''}`);
+    },
+    get:    (id)   => request('GET',    `/appointments?id=${id}`),
+    create: (data) => request('POST',   '/appointments', data),
+    update: (data) => request('PUT',    '/appointments', data),
+    delete: (id)   => request('DELETE', `/appointments?id=${id}`),
+  };
+
+  // ===== Invoices =====
+  const invoices = {
+    list: (opts = {}) => {
+      const q = new URLSearchParams();
+      if (opts.type)        q.set('type',        opts.type);
+      if (opts.status)      q.set('status',      opts.status);
+      if (opts.deal_id)     q.set('deal_id',     opts.deal_id);
+      if (opts.customer_id) q.set('customer_id', opts.customer_id);
+      return request('GET', `/invoices${q.toString() ? '?' + q.toString() : ''}`);
+    },
+    get:    (id)   => request('GET',    `/invoices?id=${id}`),
+    create: (data) => request('POST',   '/invoices', data),
+    update: (data) => request('PUT',    '/invoices', data),
+    delete: (id)   => request('DELETE', `/invoices?id=${id}`),
+  };
+
+  return { deals, customers, fields, activities, dashboard, ai, ma, goals, reports, contracts, announcements, wiki, documents, appointments, invoices };
 })();
