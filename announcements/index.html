@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>お知らせ | アスナロ SFA</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <style>
+    .ann-card {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      transition: background .1s;
+    }
+    .ann-card:last-child { border-bottom: none; }
+    .ann-card:hover { background: #f8fafc; }
+    .ann-pin {
+      display: inline-flex; align-items: center; gap: 4px;
+      font-size: 11px; font-weight: 700;
+      background: #fef3c7; color: #92400e;
+      border-radius: 10px; padding: 2px 8px; margin-bottom: 6px;
+    }
+    .ann-title {
+      font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 4px;
+    }
+    .ann-body {
+      font-size: 13px; color: var(--text); white-space: pre-wrap;
+      line-height: 1.7; margin-bottom: 8px;
+    }
+    .ann-meta { font-size: 11px; color: var(--text-muted); display: flex; gap: 12px; }
+    .ann-actions { display: none; gap: 6px; }
+    .ann-card:hover .ann-actions { display: flex; }
+  </style>
+</head>
+<body class="app-layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo"><div class="logo-text">ASNALO SFA</div><div class="logo-sub">営業管理システム</div></div>
+    <nav class="sidebar-nav">
+      <a href="/" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>ダッシュボード</a>
+      <a href="/deals/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>案件管理</a>
+      <a href="/customers/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>顧客管理</a>
+      <a href="/ma/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>MAメール</a>
+      <a href="/tasks/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><polyline points="9 11 12 14 22 4"/><line x1="3" y1="10" x2="9" y2="10"/></svg>タスク管理</a>
+      <a href="/announcements/index.html" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>お知らせ</a>
+      <a href="/wiki/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>社内Wiki</a>
+      <a href="/prospects/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" stroke-width="2" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><path d="M11 8v6M8 11h6"/></svg>新規開拓リサーチ</a>
+      <a href="/offerbox/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>OBレポート</a>
+      <div class="nav-section">設定</div>
+      <a href="/settings/fields.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>フィールド設定</a>
+    </nav>
+    <div class="sidebar-user" id="sidebarUser"></div>
+  </aside>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">お知らせ</h1>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">社内掲示板</div>
+      </div>
+      <div class="page-actions">
+        <button class="btn btn-primary" id="addBtn">+ 投稿する</button>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div class="card" id="annList">
+        <div style="text-align:center;padding:40px;color:var(--text-muted);">読み込み中...</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- 投稿モーダル -->
+  <div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:12px;padding:28px;width:560px;max-width:95vw;box-shadow:0 16px 48px rgba(0,0,0,.18);">
+      <div style="font-size:15px;font-weight:800;color:var(--primary);margin-bottom:20px;" id="modalTitle">お知らせを投稿</div>
+      <input type="hidden" id="editId">
+      <div class="form-group">
+        <label class="form-label">タイトル <span class="required">*</span></label>
+        <input type="text" class="form-input" id="fTitle" placeholder="タイトルを入力">
+      </div>
+      <div class="form-group">
+        <label class="form-label">本文</label>
+        <textarea class="form-textarea" id="fContent" placeholder="内容を入力..." style="min-height:140px;"></textarea>
+      </div>
+      <div class="form-group" style="margin-bottom:20px;">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;">
+          <input type="checkbox" id="fPinned"> 📌 ピン留めする
+        </label>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn btn-ghost" onclick="closeModal()">キャンセル</button>
+        <button class="btn btn-primary" id="saveBtn">投稿する</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/assets/js/auth.js"></script>
+  <script src="/assets/js/api.js"></script>
+  <script src="/assets/js/utils.js"></script>
+  <script>
+    let items = [];
+
+    initPage(async () => { await load(); });
+
+    async function load() {
+      try {
+        items = await API.announcements.list();
+        render();
+      } catch(e) { Toast.error('読み込みエラー: ' + e.message); }
+    }
+
+    function render() {
+      const el = document.getElementById('annList');
+      if (!items.length) {
+        el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">お知らせがありません</div>';
+        return;
+      }
+      el.innerHTML = items.map(a => `
+        <div class="ann-card">
+          ${a.pinned ? '<div class="ann-pin">📌 ピン留め</div>' : ''}
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
+            <div style="flex:1;min-width:0;">
+              <div class="ann-title">${escHtml(a.title)}</div>
+              ${a.content ? `<div class="ann-body">${escHtml(a.content)}</div>` : ''}
+              <div class="ann-meta">
+                <span>${a.author || '—'}</span>
+                <span>${fmtDatetime(a.created_at)}</span>
+                ${a.updated_at !== a.created_at ? `<span>（編集済み）</span>` : ''}
+              </div>
+            </div>
+            <div class="ann-actions">
+              <button class="btn btn-ghost btn-sm" onclick="openEdit('${a.id}')">編集</button>
+              <button class="btn btn-danger btn-sm" onclick="del('${a.id}')">削除</button>
+            </div>
+          </div>
+        </div>`).join('');
+    }
+
+    // ===== モーダル =====
+    document.getElementById('addBtn').addEventListener('click', () => {
+      document.getElementById('modalTitle').textContent = 'お知らせを投稿';
+      document.getElementById('editId').value = '';
+      document.getElementById('fTitle').value = '';
+      document.getElementById('fContent').value = '';
+      document.getElementById('fPinned').checked = false;
+      document.getElementById('modal').style.display = 'flex';
+      document.getElementById('fTitle').focus();
+    });
+
+    function openEdit(id) {
+      const a = items.find(x => x.id === id);
+      if (!a) return;
+      document.getElementById('modalTitle').textContent = 'お知らせを編集';
+      document.getElementById('editId').value = a.id;
+      document.getElementById('fTitle').value = a.title;
+      document.getElementById('fContent').value = a.content || '';
+      document.getElementById('fPinned').checked = a.pinned;
+      document.getElementById('modal').style.display = 'flex';
+    }
+
+    function closeModal() { document.getElementById('modal').style.display = 'none'; }
+    document.getElementById('modal').addEventListener('click', e => { if (e.target === document.getElementById('modal')) closeModal(); });
+
+    document.getElementById('saveBtn').addEventListener('click', async () => {
+      const title = document.getElementById('fTitle').value.trim();
+      if (!title) { Toast.error('タイトルを入力してください'); return; }
+      const editId = document.getElementById('editId').value;
+      const payload = {
+        title,
+        content: document.getElementById('fContent').value,
+        pinned:  document.getElementById('fPinned').checked,
+      };
+      try {
+        if (editId) {
+          await API.announcements.update({ id: editId, ...payload });
+          Toast.success('更新しました');
+        } else {
+          await API.announcements.create(payload);
+          Toast.success('投稿しました');
+        }
+        closeModal();
+        await load();
+      } catch(e) { Toast.error('エラー: ' + e.message); }
+    });
+
+    async function del(id) {
+      if (!confirm('このお知らせを削除しますか？')) return;
+      try {
+        await API.announcements.delete(id);
+        Toast.success('削除しました');
+        await load();
+      } catch(e) { Toast.error('削除エラー: ' + e.message); }
+    }
+
+    function escHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+  </script>
+</body>
+</html>

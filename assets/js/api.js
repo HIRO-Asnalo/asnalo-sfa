@@ -115,5 +115,22 @@ const API = (() => {
     sendPending:    ()              => request('POST',   '/ma-send', {}),
   };
 
-  return { deals, customers, fields, activities, dashboard, ai, ma, goals, reports, contracts };
+  // ===== Announcements =====
+  const announcements = {
+    list:   ()     => request('GET',    '/announcements'),
+    create: (data) => request('POST',   '/announcements', data),
+    update: (data) => request('PUT',    '/announcements', data),
+    delete: (id)   => request('DELETE', `/announcements?id=${id}`),
+  };
+
+  // ===== Wiki =====
+  const wiki = {
+    list:   ()     => request('GET',    '/wiki'),
+    get:    (id)   => request('GET',    `/wiki?id=${id}`),
+    create: (data) => request('POST',   '/wiki', data),
+    update: (data) => request('PUT',    '/wiki', data),
+    delete: (id)   => request('DELETE', `/wiki?id=${id}`),
+  };
+
+  return { deals, customers, fields, activities, dashboard, ai, ma, goals, reports, contracts, announcements, wiki };
 })();
