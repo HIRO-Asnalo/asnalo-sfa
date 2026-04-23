@@ -461,10 +461,27 @@
       const inv = allInvoices.find(x => x.id === id);
       if (!inv) return;
       try {
-        const { id: _, number: __, type: ___, created_at: ____, updated_at: _____, ...rest } = inv;
-        await API.invoices.create({ ...rest, type: 'invoice', status: 'draft' });
-        await loadAll(); Toast.success('請求書を作成しました');
-      } catch(e) { Toast.error('変換エラー: ' + e.message); }
+        await API.invoices.create({
+          type:          'invoice',
+          deal_id:       inv.deal_id       || null,
+          customer_id:   inv.customer_id   || null,
+          customer_name: inv.customer_name || null,
+          status:        'draft',
+          items:         inv.items         || [],
+          subtotal:      inv.subtotal      || 0,
+          tax_rate:      inv.tax_rate      ?? 10,
+          tax_amount:    inv.tax_amount    || 0,
+          total:         inv.total         || 0,
+          issued_date:   new Date().toISOString().slice(0, 10),
+          due_date:      inv.due_date      || null,
+          notes:         inv.notes         || null,
+        });
+        await loadAll();
+        Toast.success('請求書を作成しました');
+      } catch(e) {
+        console.error(e);
+        Toast.error('変換エラー: ' + e.message);
+      }
     }
 
     // ===== 印刷 =====
