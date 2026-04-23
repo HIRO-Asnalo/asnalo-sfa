@@ -60,6 +60,12 @@ const API = (() => {
     listByDeal:     (deal_id)     => request('GET',    `/activities?deal_id=${deal_id}`),
     listByCustomer: (customer_id) => request('GET',    `/activities?customer_id=${customer_id}`),
     listTasks:      (assigned_to) => request('GET',    `/activities?tasks=true${assigned_to ? '&assigned_to=' + encodeURIComponent(assigned_to) : ''}`),
+    listStandalone: (opts = {}) => {
+      const q = new URLSearchParams({ tasks: 'true', standalone: 'true' });
+      if (opts.assigned_to) q.set('assigned_to', opts.assigned_to);
+      if (opts.status)      q.set('status', opts.status);
+      return request('GET', `/activities?${q.toString()}`);
+    },
     create: (data)                => request('POST',   '/activities', data),
     update: (data)                => request('PUT',    '/activities', data),
     delete: (id)                  => request('DELETE', `/activities?id=${id}`),

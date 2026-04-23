@@ -26,9 +26,12 @@ exports.handler = async (event) => {
         const { deal_id, customer_id, tasks, assigned_to } = event.queryStringParameters || {};
 
         if (tasks === 'true') {
-          // ダッシュボード用: 全未完了タスクを返す
+          // タスク一覧: standalone=true なら案件・顧客非紐付けのみ
+          const { standalone, status: statusFilter } = event.queryStringParameters || {};
           let rows = await getRows(TABLE, { is_task: true });
-          rows = rows.filter(r => r.status !== 'done');
+          if (standalone === 'true') rows = rows.filter(r => !r.deal_id && !r.customer_id);
+          if (statusFilter === 'done') rows = rows.filter(r => r.status === 'done');
+          else if (statusFilter === 'pending') rows = rows.filter(r => r.status !== 'done');
           if (assigned_to) rows = rows.filter(r => r.assigned_to === assigned_to);
           rows.sort((a, b) => (a.due_date || '9999') < (b.due_date || '9999') ? -1 : 1);
           return response(200, rows);
