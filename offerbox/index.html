@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OBレポート生成 | アスナロ SFA</title>
+  <link rel="stylesheet" href="/assets/css/main.css">
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+  <style>
+    .ob-wrap { margin-left: var(--sidebar-w); padding: 28px 32px; max-width: 900px; }
+    .ob-title { font-size: 20px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
+    .ob-sub   { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
+
+    .ob-card {
+      background: #fff;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 28px 32px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+    }
+    .ob-card h3 {
+      font-size: 13px; font-weight: 800; color: var(--primary);
+      text-transform: uppercase; letter-spacing: .05em;
+      margin-bottom: 20px; padding-bottom: 10px;
+      border-bottom: 2px solid var(--accent);
+      display: inline-block;
+    }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+    .form-group input[type="text"],
+    .form-group input[type="month"] {
+      padding: 9px 12px; border: 1px solid var(--border);
+      border-radius: 8px; font-size: 14px; color: var(--text);
+      background: var(--bg); transition: border .2s;
+    }
+    .form-group input:focus { outline: none; border-color: var(--primary); background: #fff; }
+
+    .upload-area {
+      border: 2px dashed var(--border); border-radius: 10px;
+      padding: 36px; text-align: center; cursor: pointer;
+      transition: all .2s; margin-bottom: 20px; background: var(--bg);
+    }
+    .upload-area:hover, .upload-area.drag { border-color: var(--primary); background: #eef1fa; }
+    .upload-area .upload-icon { font-size: 36px; margin-bottom: 8px; }
+    .upload-area .upload-text { font-size: 14px; color: var(--text-muted); }
+    .upload-area .upload-hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    .upload-area.has-file { border-style: solid; border-color: var(--success); background: #f0fdf4; }
+    .upload-area.has-file .upload-text { color: var(--success); font-weight: 600; }
+
+    .btn-generate {
+      background: var(--primary); color: #fff; border: none;
+      padding: 12px 32px; border-radius: 8px; font-size: 15px;
+      font-weight: 700; cursor: pointer; width: 100%;
+      transition: background .2s; display: flex; align-items: center;
+      justify-content: center; gap: 8px;
+    }
+    .btn-generate:hover:not(:disabled) { background: var(--primary-lt); }
+    .btn-generate:disabled { opacity: .5; cursor: not-allowed; }
+
+    .progress-bar {
+      height: 4px; background: var(--border); border-radius: 4px;
+      margin-top: 16px; overflow: hidden; display: none;
+    }
+    .progress-bar.active { display: block; }
+    .progress-fill {
+      height: 100%; background: var(--primary); border-radius: 4px;
+      transition: width .4s; width: 0%;
+    }
+    .progress-label { font-size: 12px; color: var(--text-muted); margin-top: 6px; text-align: center; }
+
+    .result-box {
+      display: none; margin-top: 20px;
+      background: #f0fdf4; border: 1px solid #86efac;
+      border-radius: 10px; padding: 20px 24px;
+    }
+    .result-box.show { display: flex; align-items: center; gap: 16px; }
+    .result-box .result-icon { font-size: 32px; }
+    .result-box .result-text { flex: 1; }
+    .result-box .result-title { font-size: 15px; font-weight: 700; color: #15803d; }
+    .result-box .result-sub { font-size: 12px; color: #166534; margin-top: 2px; }
+    .btn-print {
+      background: var(--success); color: #fff; border: none;
+      padding: 10px 20px; border-radius: 8px; font-size: 14px;
+      font-weight: 700; cursor: pointer; white-space: nowrap;
+    }
+    .btn-print:hover { background: #16a34a; }
+
+    .error-box {
+      display: none; margin-top: 16px;
+      background: #fef2f2; border: 1px solid #fca5a5;
+      border-radius: 8px; padding: 12px 16px;
+      font-size: 13px; color: #dc2626;
+    }
+    .error-box.show { display: block; }
+
+    .info-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px;
+    }
+    .info-item {
+      background: var(--bg); border-radius: 8px; padding: 14px;
+      border: 1px solid var(--border); text-align: center;
+    }
+    .info-item .info-label { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+    .info-item .info-val { font-size: 22px; font-weight: 800; color: var(--primary); }
+
+    #fileInput { display: none; }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- ■ Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">Asnalo SFA</div>
+      <div class="logo-sub">営業支援システム</div>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="/" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>ダッシュボード</a>
+      <a href="/deals/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>案件管理</a>
+      <a href="/customers/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>顧客管理</a>
+      <a href="/ma/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>MAメール</a>
+      <a href="/prospects/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" stroke-width="2" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>新規開拓リサーチ</a>
+      <a href="/offerbox/index.html" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>OBレポート</a>
+      <div style="flex:1"></div>
+      <a href="/settings/fields.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>フィールド設定</a>
+    </nav>
+    <div class="sidebar-footer">
+      <span id="user-email-display" style="font-size:11px;color:rgba(255,255,255,.5);padding:12px 18px;display:block;"></span>
+      <button onclick="netlifyIdentity.logout()" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:11px;padding:0 18px 14px;cursor:pointer;">ログアウト</button>
+    </div>
+  </aside>
+
+  <!-- ■ Main -->
+  <main class="ob-wrap">
+    <div class="ob-title">OfferBox レポート生成</div>
+    <div class="ob-sub">CSVをアップロードするとPDFレポートを自動生成します</div>
+
+    <div class="ob-card">
+      <h3>レポート設定</h3>
+      <div class="form-row">
+        <div class="form-group">
+          <label>クライアント名</label>
+          <input type="text" id="clientName" placeholder="例: 〇〇建設株式会社">
+        </div>
+        <div class="form-group">
+          <label>対象期間</label>
+          <input type="text" id="reportMonth" placeholder="例: 2026年4月">
+        </div>
+      </div>
+
+      <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon">📂</div>
+        <div class="upload-text" id="uploadText">CSVファイルをクリックまたはドロップ</div>
+        <div class="upload-hint">OfferBox から出力した offerlist.csv に対応</div>
+      </div>
+      <input type="file" id="fileInput" accept=".csv">
+
+      <button class="btn-generate" id="generateBtn" disabled onclick="generate()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        PDFレポートを生成
+      </button>
+
+      <div class="progress-bar" id="progressBar">
+        <div class="progress-fill" id="progressFill"></div>
+      </div>
+      <div class="progress-label" id="progressLabel"></div>
+
+      <div class="error-box" id="errorBox"></div>
+
+      <div class="result-box" id="resultBox">
+        <div class="result-icon">✅</div>
+        <div class="result-text">
+          <div class="result-title">レポート生成完了</div>
+          <div class="result-sub" id="resultSub"></div>
+        </div>
+        <button class="btn-print" onclick="openReport()">PDFで開く / 印刷</button>
+      </div>
+    </div>
+
+    <div class="ob-card" id="previewCard" style="display:none">
+      <h3>データプレビュー</h3>
+      <div class="info-grid" id="previewGrid"></div>
+    </div>
+  </main>
+</div>
+
+<script src="/assets/js/auth.js"></script>
+<script>
+// ──────────────────────────────────────────────
+// 定数（Python offerbox_pdf_report.py と同一）
+// ──────────────────────────────────────────────
+const ACCEPTED_STATUS = "学生の承認済み";
+const DECLINED_STATUSES = ["学生による辞退", "学生側の取り消し"];
+const AUTO_CANCEL_STATUSES = ["自動取り消し", "企業側の取り消し", "オファー取り消し"];
+const PENDING_STATUSES = ["学生の承認待ち"];
+
+const C = {
+  primary: "#2c3e50", secondary: "#4a5568",
+  accent: "#4A90D9", accent2: "#E8546B",
+  success: "#10b981", warning: "#f59e0b",
+  danger: "#ef4444", light: "#f8fafc",
+  border: "#e2e8f0", muted: "#94a3b8",
+  chart_blue: "#3b82f6", chart_teal: "#14b8a6", chart_gray: "#cbd5e1",
+};
+
+// ──────────────────────────────────────────────
+// ファイル選択
+// ──────────────────────────────────────────────
+let csvData = null;
+let reportHtml = null;
+
+const uploadArea = document.getElementById('uploadArea');
+const fileInput  = document.getElementById('fileInput');
+const generateBtn = document.getElementById('generateBtn');
+
+fileInput.addEventListener('change', e => loadFile(e.target.files[0]));
+
+uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.classList.add('drag'); });
+uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag'));
+uploadArea.addEventListener('drop', e => {
+  e.preventDefault(); uploadArea.classList.remove('drag');
+  if (e.dataTransfer.files[0]) loadFile(e.dataTransfer.files[0]);
+});
+
+function loadFile(file) {
+  if (!file) return;
+  Papa.parse(file, {
+    encoding: 'Shift_JIS',
+    complete: result => {
+      if (result.errors.length && !result.data.length) {
+        Papa.parse(file, {
+          encoding: 'UTF-8',
+          complete: r2 => finishLoad(r2.data, file.name),
+          error: () => showError('CSVの読み込みに失敗しました')
+        });
+        return;
+      }
+      finishLoad(result.data, file.name);
+    },
+    error: () => showError('CSVの読み込みに失敗しました')
+  });
+}
+
+function finishLoad(rawData, fileName) {
+  // ヘッダー行を自動検出（Python の load_csv と同じロジック）
+  let headerIdx = 0;
+  for (let i = 0; i < Math.min(rawData.length, 10); i++) {
+    const nonempty = rawData[i].filter(v => v && v.trim()).length;
+    if (nonempty >= 3) { headerIdx = i; break; }
+  }
+  const headers = rawData[headerIdx];
+  csvData = rawData.slice(headerIdx + 1)
+    .filter(row => row.some(v => v && v.trim()))
+    .map(row => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h] = row[i] || ''; });
+      return obj;
+    });
+
+  uploadArea.classList.add('has-file');
+  document.getElementById('uploadText').textContent = `✓ ${fileName}（${csvData.length}行）`;
+  generateBtn.disabled = false;
+  hideError();
+  showPreview();
+}
+
+function showPreview() {
+  if (!csvData) return;
+  const cols = detectColumns(csvData);
+  const sc = cols.status;
+  const total = csvData.length;
+  const accepted = csvData.filter(r => r[sc] === ACCEPTED_STATUS).length;
+  const declined = csvData.filter(r => DECLINED_STATUSES.includes(r[sc])).length;
+
+  document.getElementById('previewCard').style.display = '';
+  document.getElementById('previewGrid').innerHTML = `
+    <div class="info-item"><div class="info-label">総送付数</div><div class="info-val">${total.toLocaleString()}</div></div>
+    <div class="info-item"><div class="info-label">承認数</div><div class="info-val" style="color:var(--success)">${accepted}</div></div>
+    <div class="info-item"><div class="info-label">承認率</div><div class="info-val">${total ? (accepted/total*100).toFixed(1) : 0}%</div></div>
+  `;
+}
+
+// ──────────────────────────────────────────────
+// 列検出（Python detect_columns と同一）
+// ──────────────────────────────────────────────
+function detectColumns(data) {
+  if (!data.length) return {};
+  const headers = Object.keys(data[0]);
+
+  function find(...keywords) {
+    for (const h of headers) {
+      for (const kw of keywords) {
+        if (h.includes(kw)) return h;
+      }
+    }
+    return null;
+  }
+
+  const cols = {
+    status:        find('オファー状況', 'status'),
+    school:        find('学校名', '大学名', 'school'),
+    division:      find('学校区分', 'division'),
+    industry1:     find('志望業界1'),
+    industry2:     find('志望業界2'),
+    industry3:     find('志望業界3'),
+    job1:          find('志望職種1'),
+    job2:          find('志望職種2'),
+    job3:          find('志望職種3'),
+    arts_science:  find('文系/理系', '文理'),
+    sender:        find('送信者'),
+    offer_date:    find('オファー日時'),
+    decline_reason: find('オファー辞退理由'),
+    company_type:  find('志望企業タイプ'),
+  };
+
+  // 学校名を自動検出（フォールバック）
+  if (!cols.school) {
+    const univPat = /大学|大学院|専門|短大|高専/;
+    for (const h of headers) {
+      const samples = data.slice(0, 20).map(r => r[h] || '');
+      if (samples.filter(v => univPat.test(v)).length >= 3) {
+        cols.school = h; break;
+      }
+    }
+  }
+
+  if (!cols.status) throw new Error(`必須列「オファー状況」が見つかりません。列一覧: ${headers.join(', ')}`);
+  return cols;
+}
+
+// ──────────────────────────────────────────────
+// 集計ロジック（Python summarize_by_group 相当）
+// ──────────────────────────────────────────────
+function groupBy(data, keyFn, statusFn) {
+  const map = {};
+  for (const row of data) {
+    const key = keyFn(row);
+    const st  = statusFn(row);
+    if (!key || key === 'nan' || key === '') continue;
+    if (!map[key]) map[key] = { sent: 0, accepted: 0, declined: 0, auto_cancel: 0, pending: 0 };
+    map[key].sent++;
+    if (st === ACCEPTED_STATUS) map[key].accepted++;
+    else if (DECLINED_STATUSES.includes(st)) map[key].declined++;
+    else if (AUTO_CANCEL_STATUSES.includes(st)) map[key].auto_cancel++;
+    else if (PENDING_STATUSES.includes(st)) map[key].pending++;
+  }
+  return Object.entries(map)
+    .map(([name, v]) => ({
+      name,
+      ...v,
+      accept_rate: v.sent ? +(v.accepted / v.sent * 100).toFixed(1) : 0,
+      decline_rate: v.sent ? +(v.declined / v.sent * 100).toFixed(1) : 0,
+    }))
+    .sort((a, b) => b.accepted - a.accepted);
+}
+
+// 複数列（志望業界1/2/3 など）を展開して集計
+function groupByMultiCol(data, colKeys, statusFn) {
+  const expanded = [];
+  for (const row of data) {
+    const st = statusFn(row);
+    const seen = new Set();
+    for (const k of colKeys) {
+      if (!k) continue;
+      const val = (row[k] || '').trim();
+      if (val && val !== 'nan' && !seen.has(val)) {
+        seen.add(val);
+        expanded.push({ name: val, status: st });
+      }
+    }
+  }
+  return groupBy(expanded, r => r.name, r => r.status);
+}
+
+// ──────────────────────────────────────────────
+// Chart.js → base64 PNG
+// ──────────────────────────────────────────────
+function chartToBase64(config, width, height) {
+  const canvas = document.createElement('canvas');
+  canvas.width  = width  * 2;
+  canvas.height = height * 2;
+  canvas.style.position = 'absolute';
+  canvas.style.left = '-9999px';
+  document.body.appendChild(canvas);
+  const ctx = canvas.getContext('2d');
+  ctx.scale(2, 2);
+  const chart = new Chart(ctx, { ...config, options: { ...config.options, animation: false, responsive: false } });
+  const b64 = canvas.toDataURL('image/png');
+  chart.destroy();
+  document.body.removeChild(canvas);
+  return b64;
+}
+
+function chartHBar(rows, nameKey, valueKey, color, title = '', topN = 15) {
+  const top = rows.slice(0, topN).reverse();
+  const labels = top.map(r => r[nameKey]);
+  const values = top.map(r => r[valueKey]);
+  return chartToBase64({
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ data: values, backgroundColor: color, borderWidth: 0 }]
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        title: { display: !!title, text: title, color: C.primary, font: { size: 13, weight: 'bold' } }
+      },
+      scales: {
+        x: { display: false, grid: { display: false } },
+        y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+      }
+    }
+  }, 560, Math.max(200, top.length * 26 + 60));
+}
+
+function chartGroupedBar(rows, nameKey, colsMap, title = '', topN = 12) {
+  const top = rows.slice(0, topN);
+  return chartToBase64({
+    type: 'bar',
+    data: {
+      labels: top.map(r => r[nameKey]),
+      datasets: colsMap.map(([key, color, label]) => ({
+        label, data: top.map(r => r[key] || 0),
+        backgroundColor: color, borderWidth: 0,
+      }))
+    },
+    options: {
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { size: 10 } } },
+        title: { display: !!title, text: title, color: C.primary, font: { size: 13, weight: 'bold' } }
+      },
+      scales: {
+        x: { ticks: { maxRotation: 35, font: { size: 9 } }, grid: { display: false } },
+        y: { grid: { color: '#f0f0f0' }, ticks: { precision: 0 } }
+      }
+    }
+  }, 640, 320);
+}
+
+function chartFunnel(total, accepted, declined, auto_cancel, pending) {
+  const labels = ['送付', '承認待ち', '承認', '辞退', '自動取消'];
+  const values = [total, pending, accepted, declined, auto_cancel];
+  const colors = [C.chart_blue, C.warning, C.success, C.danger, C.chart_gray];
+  return chartToBase64({
+    type: 'bar',
+    data: {
+      labels: [...labels].reverse(),
+      datasets: [{ data: [...values].reverse(), backgroundColor: [...colors].reverse(), borderWidth: 0 }]
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { display: false }, y: { grid: { display: false }, ticks: { font: { size: 11 } } }
+      }
+    }
+  }, 640, 180);
+}
+
+function chartStatusBar(statusCounts, total) {
+  const statuses = statusCounts.map(s => s.status);
+  const vals = statusCounts.map(s => s.count);
+  const colors = [C.chart_gray, C.danger, C.warning, C.success, '#a78bfa', '#fb923c', '#6b7280'];
+  return chartToBase64({
+    type: 'bar',
+    data: {
+      labels: [...statuses].reverse(),
+      datasets: [{ data: [...vals].reverse(), backgroundColor: colors.slice(0, vals.length).reverse(), borderWidth: 0 }]
+    },
+    options: {
+      indexAxis: 'y',
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { display: false }, y: { grid: { display: false }, ticks: { font: { size: 10 } } }
+      }
+    }
+  }, 480, Math.max(160, statuses.length * 30 + 40));
+}
+
+// ──────────────────────────────────────────────
+// メイン生成処理
+// ──────────────────────────────────────────────
+function setProgress(pct, label) {
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = label;
+}
+
+async function generate() {
+  hideError();
+  document.getElementById('resultBox').classList.remove('show');
+  document.getElementById('progressBar').classList.add('active');
+  generateBtn.disabled = true;
+  setProgress(5, 'データ解析中...');
+
+  try {
+    const clientName = document.getElementById('clientName').value.trim() || 'クライアント様';
+    const month = document.getElementById('reportMonth').value.trim() || '全期間';
+    const cols = detectColumns(csvData);
+    const sc = cols.status;
+    const getStatus = r => r[sc] || '';
+
+    // KPI
+    const total = csvData.length;
+    const accepted    = csvData.filter(r => r[sc] === ACCEPTED_STATUS).length;
+    const declined    = csvData.filter(r => DECLINED_STATUSES.includes(r[sc])).length;
+    const auto_cancel = csvData.filter(r => AUTO_CANCEL_STATUSES.includes(r[sc])).length;
+    const pending     = csvData.filter(r => PENDING_STATUSES.includes(r[sc])).length;
+    const accept_rate    = total ? +(accepted / total * 100).toFixed(1) : 0;
+    const decline_rate   = total ? +(declined / total * 100).toFixed(1) : 0;
+    const auto_cancel_rate = total ? +(auto_cancel / total * 100).toFixed(1) : 0;
+    const effective_rate   = total ? +((accepted + pending) / total * 100).toFixed(1) : 0;
+
+    // ステータス内訳
+    const statusMap = {};
+    csvData.forEach(r => { const s = r[sc] || ''; statusMap[s] = (statusMap[s] || 0) + 1; });
+    const statusCounts = Object.entries(statusMap)
+      .map(([status, count]) => ({ status, count, pct: +(count / total * 100).toFixed(1) }))
+      .sort((a, b) => b.count - a.count);
+
+    setProgress(20, '集計処理中...');
+
+    // 大学別
+    const df_univ = cols.school ? groupBy(csvData, r => r[cols.school], getStatus) : [];
+
+    // 志望業界別
+    const df_ind = groupByMultiCol(csvData,
+      [cols.industry1, cols.industry2, cols.industry3].filter(Boolean), getStatus);
+
+    // 志望職種別
+    const df_job = groupByMultiCol(csvData,
+      [cols.job1, cols.job2, cols.job3].filter(Boolean), getStatus);
+
+    // 文理別
+    const df_arts_science = cols.arts_science
+      ? groupBy(csvData, r => r[cols.arts_science], getStatus) : [];
+
+    // 学校区分別
+    const df_division = cols.division
+      ? groupBy(csvData, r => r[cols.division], getStatus) : [];
+
+    // 志望企業タイプ別
+    const df_company_type = cols.company_type
+      ? groupBy(csvData, r => r[cols.company_type], getStatus) : [];
+
+    // 辞退理由
+    const declineReasonMap = {};
+    if (cols.decline_reason) {
+      csvData.forEach(r => {
+        const v = (r[cols.decline_reason] || '').trim();
+        if (v) declineReasonMap[v] = (declineReasonMap[v] || 0) + 1;
+      });
+    }
+    const df_decline = Object.entries(declineReasonMap)
+      .map(([reason, count]) => ({ reason, count, pct: +(count / Object.values(declineReasonMap).reduce((a,b)=>a+b,0) * 100).toFixed(1) }))
+      .sort((a, b) => b.count - a.count);
+
+    // 送信者別
+    const df_sender = cols.sender
+      ? groupBy(csvData, r => r[cols.sender], getStatus)
+        .map(r => ({ sender: r.name, sent: r.sent, accepted: r.accepted, declined: r.declined, accept_rate: r.accept_rate }))
+      : [];
+
+    setProgress(40, 'グラフ生成中...');
+    await new Promise(r => setTimeout(r, 50));
+
+    // チャート生成
+    const chart_status = chartStatusBar(statusCounts, total);
+    const chart_funnel = chartFunnel(total, accepted, declined, auto_cancel, pending);
+    const chart_univ   = df_univ.length ? chartHBar(df_univ, 'name', 'accepted', C.chart_blue, '承認数 TOP15') : '';
+    const chart_ind    = df_ind.length  ? chartGroupedBar(df_ind, 'name', [['sent', C.chart_gray, '送付数'], ['accepted', C.chart_blue, '承認数']], '志望業界別 送付数・承認数') : '';
+    const chart_job    = df_job.length  ? chartHBar(df_job, 'name', 'accepted', C.chart_teal, '承認数 TOP15') : '';
+    const chart_as     = df_arts_science.length ? chartHBar(df_arts_science, 'name', 'sent', C.accent2, '文理別 送付数') : '';
+    const chart_decline = df_decline.length ? chartHBar(df_decline.slice(0,8).map(r=>({name:r.reason,accepted:r.count})), 'name', 'accepted', C.danger, '辞退理由 TOP8') : '';
+
+    setProgress(70, 'AI分析中（Claude）...');
+    await new Promise(r => setTimeout(r, 50));
+
+    // AI分析（Netlify Function 経由で Claude API 呼び出し）
+    let aiResult = null;
+    try {
+      const aiRes = await fetch('/api/ai-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'offerbox_analysis',
+          data: {
+            total, accepted, declined, auto_cancel, pending,
+            accept_rate, decline_rate, auto_cancel_rate,
+            df_univ:         df_univ.slice(0, 10),
+            df_ind:          df_ind.slice(0, 10),
+            df_job:          df_job.slice(0, 10),
+            df_arts_science: df_arts_science.slice(0, 10),
+            df_decline:      df_decline.slice(0, 5),
+            df_sender:       df_sender,
+          },
+        }),
+      });
+      if (aiRes.ok) {
+        const aiJson = await aiRes.json();
+        const match = aiJson.text && aiJson.text.match(/\{[\s\S]*\}/);
+        if (match) {
+          const cleaned = match[0].replace(/,(\s*[}\]])/g, '$1');
+          aiResult = JSON.parse(cleaned);
+        }
+      }
+    } catch (e) {
+      console.warn('AI分析スキップ:', e.message);
+    }
+
+    setProgress(90, 'レポート生成中...');
+    await new Promise(r => setTimeout(r, 50));
+
+    const now = new Date();
+    const generated_date = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
+
+    // HTMLレポート生成
+    reportHtml = buildReportHtml({
+      clientName, month, generated_date,
+      total, accepted, declined, auto_cancel, pending,
+      accept_rate, decline_rate, auto_cancel_rate, effective_rate,
+      statusCounts, df_univ, df_ind, df_job, df_arts_science,
+      df_division, df_company_type, df_decline, df_sender,
+      chart_status, chart_funnel, chart_univ, chart_ind,
+      chart_job, chart_as, chart_decline,
+      ai: aiResult,
+    });
+
+    setProgress(100, '完了');
+    document.getElementById('progressBar').classList.remove('active');
+
+    const resultSub = `${clientName} / ${month} — 送付数: ${total.toLocaleString()} 件 | 承認率: ${accept_rate}%`;
+    document.getElementById('resultSub').textContent = resultSub;
+    document.getElementById('resultBox').classList.add('show');
+  } catch(e) {
+    document.getElementById('progressBar').classList.remove('active');
+    showError(e.message);
+  } finally {
+    generateBtn.disabled = false;
+  }
+}
+
+function openReport() {
+  if (!reportHtml) return;
+  const win = window.open('', '_blank');
+  win.document.write(reportHtml);
+  win.document.close();
+  setTimeout(() => win.print(), 1200);
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorBox');
+  el.textContent = 'エラー: ' + msg;
+  el.classList.add('show');
+}
+function hideError() { document.getElementById('errorBox').classList.remove('show'); }
+
+// ──────────────────────────────────────────────
+// レポート HTML テンプレート（Python 版と同一デザイン）
+// ──────────────────────────────────────────────
+function buildReportHtml(d) {
+  const {
+    clientName, month, generated_date,
+    total, accepted, declined, auto_cancel, pending,
+    accept_rate, decline_rate, auto_cancel_rate, effective_rate,
+    statusCounts, df_univ, df_ind, df_job, df_arts_science,
+    df_division, df_company_type, df_decline, df_sender,
+    chart_status, chart_funnel, chart_univ, chart_ind,
+    chart_job, chart_as, chart_decline,
+    ai,
+  } = d;
+
+  const tableRow = (cells) => `<tr>${cells.map(c => `<td>${c}</td>`).join('')}</tr>`;
+  const img = (b64, alt) => b64 ? `<img src="${b64}" alt="${alt}" style="max-width:100%;height:auto;">` : '';
+
+  const univRows = df_univ.slice(0, 20).map(r =>
+    `<tr><td class="name-col">${r.name}</td><td>${r.sent}</td><td class="highlight">${r.accepted}</td><td>${r.declined}</td><td>${r.accept_rate}%</td><td>${r.decline_rate}%</td></tr>`
+  ).join('');
+
+  const indRows = df_ind.slice(0, 20).map(r =>
+    `<tr><td class="name-col">${r.name}</td><td>${r.sent}</td><td class="highlight">${r.accepted}</td><td>${r.declined}</td><td>${r.accept_rate}%</td><td>${r.decline_rate}%</td></tr>`
+  ).join('');
+
+  const jobRows = df_job.slice(0, 20).map(r =>
+    `<tr><td class="name-col">${r.name}</td><td>${r.sent}</td><td class="highlight">${r.accepted}</td><td>${r.declined}</td><td>${r.accept_rate}%</td><td>${r.decline_rate}%</td></tr>`
+  ).join('');
+
+  const asRows = df_arts_science.map(r =>
+    `<tr><td class="name-col">${r.name}</td><td>${r.sent}</td><td class="highlight">${r.accepted}</td><td>${r.declined}</td><td>${r.accept_rate}%</td></tr>`
+  ).join('');
+
+  const divRows = df_division.map(r =>
+    `<tr><td class="name-col">${r.name}</td><td>${r.sent}</td><td class="highlight">${r.accepted}</td><td>${r.declined}</td><td>${r.accept_rate}%</td></tr>`
+  ).join('');
+
+  const ctRows = df_company_type.map(r =>
+    `<tr><td class="name-col">${r.name}</td><td>${r.sent}</td><td class="highlight">${r.accepted}</td><td>${r.declined}</td><td>${r.accept_rate}%</td><td>${r.decline_rate}%</td></tr>`
+  ).join('');
+
+  const declineRows = df_decline.map(r =>
+    `<tr><td class="name-col">${r.reason}</td><td>${r.count}</td><td>${r.pct}%</td></tr>`
+  ).join('');
+
+  const statusRows = statusCounts.map(s =>
+    `<tr><td class="name-col">${s.status}</td><td>${s.count.toLocaleString()}</td><td>${s.pct}%</td></tr>`
+  ).join('');
+
+  let sectionNum = 1;
+  const secHeader = (title) => `
+    <div class="section-header">
+      <span class="section-number">${sectionNum++}</span>
+      <span class="section-title">${title}</span>
+    </div>`;
+
+  return `<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>OfferBox レポート — ${clientName}</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --primary:#2c3e50;--secondary:#4a5568;--accent:#4A90D9;--accent2:#E8546B;
+  --success:#10b981;--warning:#f59e0b;--danger:#ef4444;
+  --light:#f8fafc;--border:#e2e8f0;--muted:#94a3b8;
+}
+body{font-family:'Noto Sans JP',-apple-system,sans-serif;color:var(--primary);background:#fff;font-size:13px;line-height:1.7;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+@page{size:A4;margin:15mm 18mm}
+.cover{height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;background:linear-gradient(135deg,#2c3e50 0%,#34495e 30%,#4A90D9 70%,#E8546B 100%);color:#fff;text-align:center;page-break-after:always;position:relative;overflow:hidden}
+.cover-badge{display:inline-block;padding:6px 20px;border:1px solid rgba(255,255,255,.3);border-radius:50px;font-size:12px;letter-spacing:2px;text-transform:uppercase;margin-bottom:32px}
+.cover h1{font-size:36px;font-weight:700;margin-bottom:12px}
+.cover h2{font-size:18px;font-weight:300;opacity:.85;margin-bottom:40px}
+.cover-meta{font-size:14px;opacity:.7;line-height:2}
+.cover-line{width:60px;height:2px;background:var(--accent);margin:24px auto}
+.page{page-break-before:always;padding-top:8px}
+.section-header{display:flex;align-items:center;gap:10px;margin-bottom:20px;padding-bottom:10px;border-bottom:2px solid var(--primary)}
+.section-number{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;background:var(--primary);color:#fff;border-radius:8px;font-size:14px;font-weight:700}
+.section-title{font-size:20px;font-weight:700}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.kpi-card{background:var(--light);border-radius:12px;padding:16px;text-align:center;border:1px solid var(--border);position:relative;overflow:hidden}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kpi-card.blue::before{background:var(--accent)}.kpi-card.green::before{background:var(--success)}
+.kpi-card.red::before{background:var(--danger)}.kpi-card.yellow::before{background:var(--warning)}
+.kpi-card.purple::before{background:var(--accent2)}.kpi-card.gray::before{background:var(--muted)}
+.kpi-label{font-size:11px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.kpi-value{font-size:28px;font-weight:700;color:var(--primary);line-height:1.2}
+.kpi-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.data-table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;margin-bottom:20px;border-radius:8px;overflow:hidden;border:1px solid var(--border)}
+.data-table thead th{background:var(--primary);color:#fff;padding:10px 12px;font-weight:600;font-size:11px;text-align:center;letter-spacing:.5px}
+.data-table tbody td{padding:8px 12px;text-align:center;border-bottom:1px solid var(--border)}
+.data-table tbody tr:nth-child(even){background:var(--light)}
+.data-table tbody tr:last-child td{border-bottom:none}
+.data-table .name-col{text-align:left;font-weight:500}
+.data-table .highlight{color:var(--accent);font-weight:700}
+.chart-container{margin:16px 0;text-align:center}
+.chart-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.sub-heading{font-size:14px;font-weight:600;margin:18px 0 10px;display:flex;align-items:center;gap:6px}
+.sub-heading::before{content:'';display:inline-block;width:4px;height:16px;background:var(--accent);border-radius:2px}
+.insight-card{border-radius:10px;padding:14px 16px;margin-bottom:12px;border-left:4px solid;background:var(--light)}
+.insight-card.positive{border-color:var(--success)}.insight-card.negative{border-color:var(--danger)}.insight-card.neutral{border-color:var(--accent)}
+.insight-title{font-size:14px;font-weight:600;margin-bottom:4px}
+.insight-body{font-size:12px;color:var(--secondary);line-height:1.8}
+.rec-card{display:flex;gap:12px;padding:14px;margin-bottom:10px;background:var(--light);border-radius:10px;border:1px solid var(--border)}
+.rec-priority{display:flex;align-items:center;justify-content:center;min-width:56px;height:28px;border-radius:6px;font-size:11px;font-weight:700;color:#fff;flex-shrink:0;align-self:flex-start;margin-top:2px}
+.rec-priority.high{background:var(--danger)}.rec-priority.medium{background:var(--warning)}.rec-priority.low{background:var(--muted)}
+.rec-title{font-size:13px;font-weight:600;margin-bottom:3px}
+.rec-body{font-size:12px;color:var(--secondary);line-height:1.7}
+.target-card{padding:14px 16px;margin-bottom:10px;border-radius:10px;border:1px solid var(--border)}
+.target-card.rank3{background:linear-gradient(135deg,#fef3c7 0%,#fef9c3 100%);border-color:#fbbf24}
+.target-card.rank2{background:linear-gradient(135deg,#dbeafe 0%,#e0e7ff 100%);border-color:#60a5fa}
+.target-card.rank1{background:linear-gradient(135deg,#d1fae5 0%,#ecfdf5 100%);border-color:#34d399}
+.target-rank{font-size:13px;font-weight:700;margin-bottom:4px}
+.target-desc{font-size:12px;color:var(--secondary);line-height:1.7}
+.summary-box{background:linear-gradient(135deg,#f0f9ff 0%,#eff6ff 100%);border:1px solid #bfdbfe;border-radius:12px;padding:18px 20px;margin-bottom:20px;font-size:13px;line-height:1.9;color:var(--secondary)}
+@media print{.cover{height:100vh}.page{page-break-before:always}}
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-badge">Monthly Report</div>
+  <h1>OfferBox<br>送付結果 分析レポート</h1>
+  <h2>${clientName}</h2>
+  <div class="cover-line"></div>
+  <div class="cover-meta">
+    対象期間: ${month}<br>
+    作成日: ${generated_date}<br>
+    作成: 株式会社アスナロ フルサポ採用
+  </div>
+</div>
+
+<!-- 1. EXECUTIVE SUMMARY -->
+<div class="page">
+  ${secHeader('Executive Summary')}
+  <div class="kpi-grid">
+    <div class="kpi-card blue"><div class="kpi-label">総送付数</div><div class="kpi-value">${total.toLocaleString()}</div><div class="kpi-sub">件</div></div>
+    <div class="kpi-card green"><div class="kpi-label">承認数</div><div class="kpi-value">${accepted}</div><div class="kpi-sub">承認率 ${accept_rate}%</div></div>
+    <div class="kpi-card red"><div class="kpi-label">辞退数</div><div class="kpi-value">${declined}</div><div class="kpi-sub">辞退率 ${decline_rate}%</div></div>
+    <div class="kpi-card gray"><div class="kpi-label">自動取消</div><div class="kpi-value">${auto_cancel}</div><div class="kpi-sub">${auto_cancel_rate}%</div></div>
+  </div>
+  <div class="kpi-grid" style="grid-template-columns:repeat(2,1fr)">
+    <div class="kpi-card yellow"><div class="kpi-label">承認待ち</div><div class="kpi-value">${pending}</div><div class="kpi-sub">現在進行中</div></div>
+    <div class="kpi-card purple"><div class="kpi-label">有効反応率</div><div class="kpi-value">${effective_rate}%</div><div class="kpi-sub">（承認＋承認待ち）÷ 送付</div></div>
+  </div>
+  <div class="sub-heading">ステータス内訳</div>
+  <div class="chart-row">
+    <div class="chart-container">${img(chart_status, 'ステータス内訳')}</div>
+    <div class="chart-container">${img(chart_funnel, 'ファネル')}</div>
+  </div>
+  <table class="data-table">
+    <thead><tr><th>オファー状況</th><th>件数</th><th>割合</th></tr></thead>
+    <tbody>${statusRows}</tbody>
+  </table>
+</div>
+
+${df_univ.length ? `
+<!-- 2. 大学別 -->
+<div class="page">
+  ${secHeader('大学別分析')}
+  <div class="sub-heading">承認数 TOP${Math.min(df_univ.length, 15)} 大学</div>
+  <div class="chart-container">${img(chart_univ, '大学別')}</div>
+  <table class="data-table">
+    <thead><tr><th>大学名</th><th>送付数</th><th>承認数</th><th>辞退数</th><th>承認率</th><th>辞退率</th></tr></thead>
+    <tbody>${univRows}</tbody>
+  </table>
+</div>` : ''}
+
+${df_ind.length ? `
+<!-- 3. 志望業界 -->
+<div class="page">
+  ${secHeader('志望業界別分析')}
+  <div class="chart-container">${img(chart_ind, '志望業界別')}</div>
+  <table class="data-table">
+    <thead><tr><th>志望業界</th><th>送付数</th><th>承認数</th><th>辞退数</th><th>承認率</th><th>辞退率</th></tr></thead>
+    <tbody>${indRows}</tbody>
+  </table>
+</div>` : ''}
+
+${df_job.length ? `
+<!-- 4. 志望職種 -->
+<div class="page">
+  ${secHeader('志望職種別分析')}
+  <div class="chart-container">${img(chart_job, '志望職種別')}</div>
+  <table class="data-table">
+    <thead><tr><th>志望職種</th><th>送付数</th><th>承認数</th><th>辞退数</th><th>承認率</th><th>辞退率</th></tr></thead>
+    <tbody>${jobRows}</tbody>
+  </table>
+</div>` : ''}
+
+<!-- 5. クロス分析 -->
+<div class="page">
+  ${secHeader('クロス分析')}
+  ${df_arts_science.length ? `
+  <div class="sub-heading">文系 / 理系別</div>
+  <div class="chart-container">${img(chart_as, '文理別')}</div>
+  <table class="data-table">
+    <thead><tr><th>区分</th><th>送付数</th><th>承認数</th><th>辞退数</th><th>承認率</th></tr></thead>
+    <tbody>${asRows}</tbody>
+  </table>` : ''}
+  ${df_company_type.length ? `
+  <div class="sub-heading">志望企業タイプ別</div>
+  <table class="data-table">
+    <thead><tr><th>企業タイプ</th><th>送付数</th><th>承認数</th><th>辞退数</th><th>承認率</th><th>辞退率</th></tr></thead>
+    <tbody>${ctRows}</tbody>
+  </table>` : ''}
+  ${df_division.length ? `
+  <div class="sub-heading">学校区分別</div>
+  <table class="data-table">
+    <thead><tr><th>学校区分</th><th>送付数</th><th>承認数</th><th>辞退数</th><th>承認率</th></tr></thead>
+    <tbody>${divRows}</tbody>
+  </table>` : ''}
+</div>
+
+${df_decline.length ? `
+<!-- 6. 辞退理由 -->
+<div class="page">
+  ${secHeader('辞退理由分析')}
+  <div class="sub-heading">辞退理由ランキング</div>
+  <div class="chart-row">
+    <div class="chart-container">${img(chart_decline, '辞退理由')}</div>
+    <table class="data-table">
+      <thead><tr><th>辞退理由</th><th>件数</th><th>割合</th></tr></thead>
+      <tbody>${declineRows}</tbody>
+    </table>
+  </div>
+</div>` : ''}
+
+${ai ? `
+<!-- 7. AI分析 -->
+<div class="page">
+  ${secHeader('カスタマーサクセス見解')}
+  ${ai.executive_summary ? `<div class="summary-box">${ai.executive_summary}</div>` : ''}
+  ${ai.insights && ai.insights.length ? `
+  <div class="sub-heading">課題分析</div>
+  ${ai.insights.map(item => `
+    <div class="insight-card ${item.type || 'neutral'}">
+      <div class="insight-title">${item.title}</div>
+      <div class="insight-body">${item.body}</div>
+    </div>`).join('')}` : ''}
+  ${ai.recommendations && ai.recommendations.length ? `
+  <div class="sub-heading">対策・ご提案</div>
+  ${ai.recommendations.map(item => `
+    <div class="rec-card">
+      <div class="rec-priority ${item.priority || 'medium'}">${(item.priority || 'medium').toUpperCase()}</div>
+      <div>
+        <div class="rec-title">${item.title}</div>
+        <div class="rec-body">${item.body}</div>
+      </div>
+    </div>`).join('')}` : ''}
+  ${ai.target_strategy && ai.target_strategy.length ? `
+  <div class="sub-heading">推奨ターゲット戦略</div>
+  ${ai.target_strategy.map(item => {
+    const rankClass = item.rank === '★★★' ? 'rank3' : item.rank === '★★☆' ? 'rank2' : 'rank1';
+    return `<div class="target-card ${rankClass}">
+      <div class="target-rank">${item.rank} ${item.label}</div>
+      <div class="target-desc">${item.description}</div>
+    </div>`;
+  }).join('')}` : ''}
+</div>` : ''}
+
+<!-- CLOSING -->
+<div class="page" style="display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:40vh;text-align:center">
+  <div style="color:var(--muted);font-size:12px;letter-spacing:2px;text-transform:uppercase;margin-bottom:12px">End of Report</div>
+  <div style="font-size:18px;font-weight:600;color:var(--primary);margin-bottom:8px">ご不明な点がございましたら<br>お気軽にお問い合わせください</div>
+  <div style="width:40px;height:2px;background:var(--accent);margin:16px auto"></div>
+  <div style="font-size:13px;color:var(--secondary)">株式会社アスナロ｜フルサポ採用</div>
+</div>
+
+</body>
+</html>`;
+}
+</script>
+</body>
+</html>

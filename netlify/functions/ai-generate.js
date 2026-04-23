@@ -8,11 +8,11 @@ const https = require('https');
 const { requireAuth } = require('./_auth');
 const { response } = require('./_db');
 
-function callClaude(prompt) {
+function callClaude(prompt, maxTokens = 1024) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
+      max_tokens: maxTokens,
       messages: [{ role: 'user', content: prompt }],
     });
 
@@ -158,6 +158,74 @@ function buildPrompt(type, data) {
 
 件名と本文をメール形式で作成してください。アスナロらしい温かみのある文体で、押しつけにならない自然な提案にしてください。`;
 
+    case 'offerbox_analysis': {
+      const s = data;
+      const fmtRows = (rows) => rows && rows.length
+        ? rows.slice(0, 10).map(r => `  ${r.name}: 送付${r.sent}件, 承認${r.accepted}件 (${r.accept_rate}%)`).join('\n')
+        : 'データなし';
+      const fmtDecline = (rows) => rows && rows.length
+        ? rows.slice(0, 5).map(r => `  ${r.reason}: ${r.count}件 (${r.pct}%)`).join('\n')
+        : 'データなし';
+      const fmtSender = (rows) => rows && rows.length
+        ? rows.map(r => `  ${r.sender}: 送付${r.sent}件, 承認${r.accepted}件 (${r.accept_rate}%)`).join('\n')
+        : 'データなし';
+
+      return `あなたは株式会社アスナロのカスタマーサクセス担当です。
+クライアント企業のOfferBox運用を代行しており、月次レポートの分析セクションを執筆します。
+データに基づいた課題分析と具体的な対策を、カスタマーサクセスの視点で記載してください。
+
+## データサマリー
+- 総送付数: ${s.total.toLocaleString()}件
+- 承認数: ${s.accepted}件（承認率: ${s.accept_rate}%）
+- 辞退数: ${s.declined}件（辞退率: ${s.decline_rate}%）
+- 自動取消数: ${s.auto_cancel}件（${s.auto_cancel_rate}%）
+- 承認待ち: ${s.pending}件
+
+## 大学別 承認数TOP10
+${fmtRows(s.df_univ)}
+
+## 志望業界別 承認数TOP10
+${fmtRows(s.df_ind)}
+
+## 志望職種別 承認数TOP10
+${fmtRows(s.df_job)}
+
+## 文系/理系別
+${fmtRows(s.df_arts_science)}
+
+## 辞退理由TOP5
+${fmtDecline(s.df_decline)}
+
+## 送信者別実績
+${fmtSender(s.df_sender)}
+
+以下のJSON形式で回答してください（他のテキストは不要）:
+{
+  "executive_summary": "3行程度の総括。カスタマーサクセスの視点で（例: 今月の運用状況について、ご報告いたします。）",
+  "insights": [
+    {
+      "title": "課題のタイトル（簡潔に）",
+      "body": "データに基づく課題分析（2〜3文。具体的な数値を含めて）",
+      "type": "positive|negative|neutral"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "high|medium|low",
+      "title": "対策のタイトル",
+      "body": "具体的な対策内容（2〜3文。「〜を実施してまいります」等の担当者トーンで）"
+    }
+  ],
+  "target_strategy": [
+    {
+      "rank": "★★★|★★☆|★☆☆",
+      "label": "ターゲットラベル（例: 建設・ハウスメーカー志望 × 理系）",
+      "description": "来月に向けたターゲティング方針の詳細"
+    }
+  ]
+}`;
+    }
+
     default:
       throw new Error('不明なタイプです');
   }
@@ -176,7 +244,8 @@ exports.handler = async (event) => {
     if (!type || !data) return response(400, { error: 'type と data が必要です' });
 
     const prompt = buildPrompt(type, data);
-    const text = await callClaude(prompt);
+    const maxTokens = type === 'offerbox_analysis' ? 3000 : 1024;
+    const text = await callClaude(prompt, maxTokens);
     return response(200, { text });
   } catch (err) {
     console.error('ai-generate error:', err);
