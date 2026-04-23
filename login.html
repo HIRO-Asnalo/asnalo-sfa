@@ -11,11 +11,14 @@
   <div class="login-card">
     <div class="login-logo">ASNALO SFA</div>
     <div class="login-sub">株式会社アスナロ 社内営業管理システム</div>
-    <button class="btn btn-dark w-full btn-lg" onclick="netlifyIdentity.open()">
+    <button class="btn btn-dark w-full btn-lg" onclick="netlifyIdentity.open('login')">
       ログイン
     </button>
-    <div style="margin-top:16px; font-size:12px; color:var(--text-muted); text-align:center;">
-      アカウントがない場合は管理者にお問い合わせください
+    <button class="btn btn-secondary w-full btn-lg" style="margin-top:10px;" onclick="netlifyIdentity.open('signup')">
+      新規登録
+    </button>
+    <div style="margin-top:14px; font-size:11px; color:var(--text-muted); text-align:center;">
+      ※ @asnalo.com のメールアドレスで登録してください
     </div>
   </div>
 
