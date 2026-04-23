@@ -7,76 +7,102 @@
   <link rel="stylesheet" href="/assets/css/main.css">
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   <style>
-    .task-group-title {
-      font-size: 11px;
-      font-weight: 800;
-      color: var(--primary);
-      letter-spacing: .06em;
-      text-transform: uppercase;
-      padding: 16px 0 8px;
-      border-bottom: 2px solid var(--accent);
-      margin-bottom: 4px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    /* ===== 共通 ===== */
+    .filter-bar-top {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 16px; flex-wrap: wrap;
     }
-    .task-group-title .count {
-      font-size: 11px;
-      font-weight: 700;
-      background: var(--bg);
-      border-radius: 10px;
-      padding: 1px 8px;
-      color: var(--text-muted);
+    .seg-btn {
+      padding: 5px 14px; border-radius: 20px;
+      border: 1px solid var(--border); background: #fff;
+      font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text-muted);
+    }
+    .seg-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .view-btn {
+      padding: 5px 12px; border-radius: 6px;
+      border: 1px solid var(--border); background: #fff;
+      font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text-muted);
+      display: flex; align-items: center; gap: 5px;
+    }
+    .view-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .empty-tasks { text-align:center; padding:48px 0; color:var(--text-muted); font-size:13px; }
+
+    /* ===== リストビュー ===== */
+    .task-group-title {
+      font-size: 11px; font-weight: 800; color: var(--primary);
+      letter-spacing: .06em; text-transform: uppercase;
+      padding: 16px 0 8px; border-bottom: 2px solid var(--accent);
+      margin-bottom: 4px; display: flex; align-items: center; gap: 8px;
+    }
+    .task-group-title .cnt {
+      font-size:11px; font-weight:700; background:var(--bg);
+      border-radius:10px; padding:1px 8px; color:var(--text-muted);
     }
     .task-row {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      padding: 12px 0;
-      border-bottom: 1px solid #f1f5f9;
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 12px 0; border-bottom: 1px solid #f1f5f9;
     }
     .task-row:last-child { border-bottom: none; }
     .task-row.done .task-text { text-decoration: line-through; opacity: .45; }
-    .task-check {
-      width: 17px; height: 17px;
-      border-radius: 4px;
-      flex-shrink: 0;
-      margin-top: 2px;
-      cursor: pointer;
-      accent-color: var(--accent);
-    }
-    .task-text { font-size: 13.5px; font-weight: 600; color: var(--text); flex: 1; }
-    .task-meta { font-size: 11px; color: var(--text-muted); margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap; }
-    .task-meta .overdue { color: #ef4444; font-weight: 700; }
-    .task-meta .today   { color: #f59e0b; font-weight: 700; }
-    .task-del { background: none; border: none; cursor: pointer; color: var(--text-muted); font-size: 18px; padding: 0 2px; flex-shrink: 0; line-height: 1; }
-    .task-del:hover { color: #ef4444; }
+    .task-check { width:17px; height:17px; border-radius:4px; flex-shrink:0; margin-top:2px; cursor:pointer; accent-color:var(--accent); }
+    .task-text  { font-size:13.5px; font-weight:600; color:var(--text); flex:1; }
+    .task-meta  { font-size:11px; color:var(--text-muted); margin-top:3px; display:flex; gap:10px; flex-wrap:wrap; }
+    .task-meta .overdue { color:#ef4444; font-weight:700; }
+    .task-meta .today   { color:#f59e0b; font-weight:700; }
+    .task-del   { background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:18px; padding:0 2px; flex-shrink:0; line-height:1; }
+    .task-del:hover { color:#ef4444; }
+    .status-sel { font-size:11px; border:1px solid var(--border); border-radius:4px; padding:2px 4px; cursor:pointer; background:#fff; }
 
-    .filter-bar-top {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 16px;
-      flex-wrap: wrap;
+    /* ===== カンバンビュー ===== */
+    .kanban-board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      align-items: start;
     }
-    .seg-btn {
-      padding: 5px 14px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
+    .kanban-col {
+      background: var(--bg);
+      border-radius: 10px;
+      padding: 12px;
+      min-height: 200px;
+    }
+    .kanban-col.drag-over { outline: 2px dashed var(--accent); }
+    .kanban-col-header {
+      font-size: 12px; font-weight: 800; color: var(--primary);
+      letter-spacing: .04em; margin-bottom: 10px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .kanban-col-header .dot {
+      width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; flex-shrink: 0;
+    }
+    .k-cnt { font-size:11px; font-weight:700; background:#fff; border-radius:10px; padding:1px 8px; color:var(--text-muted); }
+
+    .kanban-card {
       background: #fff;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      color: var(--text-muted);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,.07);
+      cursor: grab;
+      border-left: 3px solid transparent;
+      position: relative;
     }
-    .seg-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-
-    .empty-tasks {
-      text-align: center;
-      padding: 48px 0;
-      color: var(--text-muted);
-      font-size: 13px;
+    .kanban-card:active { cursor: grabbing; opacity: .7; }
+    .kanban-card.dragging { opacity: .4; }
+    .kanban-card .k-title { font-size:13px; font-weight:700; color:var(--text); margin-bottom:6px; line-height:1.4; }
+    .kanban-card .k-meta  { font-size:11px; color:var(--text-muted); display:flex; gap:8px; flex-wrap:wrap; }
+    .kanban-card .k-overdue { color:#ef4444; font-weight:700; }
+    .kanban-card .k-today   { color:#f59e0b; font-weight:700; }
+    .kanban-card .k-actions {
+      position:absolute; top:8px; right:8px;
+      display:none; gap:4px;
     }
+    .kanban-card:hover .k-actions { display:flex; }
+    .k-act-btn { background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:13px; padding:2px; line-height:1; }
+    .k-act-btn:hover { color:var(--primary); }
+    .kanban-card.todo     { border-left-color: #94a3b8; }
+    .kanban-card.in_progress { border-left-color: #0ea5e9; }
+    .kanban-card.done     { border-left-color: #22c55e; }
   </style>
 </head>
 <body class="app-layout">
@@ -111,26 +137,71 @@
       <!-- フィルターバー -->
       <div class="filter-bar-top">
         <button class="seg-btn active" data-scope="mine" onclick="setScope('mine',this)">自分のタスク</button>
-        <button class="seg-btn" data-scope="all" onclick="setScope('all',this)">全員</button>
+        <button class="seg-btn" data-scope="all"  onclick="setScope('all',this)">全員</button>
         <div style="width:1px;height:20px;background:var(--border);margin:0 4px;"></div>
-        <button class="seg-btn active" data-status="pending" onclick="setStatus('pending',this)">未完了</button>
-        <button class="seg-btn" data-status="done" onclick="setStatus('done',this)">完了済み</button>
+        <input type="text" class="search-input" id="taskSearch" placeholder="タスクを検索" style="width:180px;" oninput="render()">
         <div style="flex:1;"></div>
-        <input type="text" class="search-input" id="taskSearch" placeholder="タスクを検索" style="width:200px;" oninput="renderTasks()">
+        <!-- ビュー切替 -->
+        <button class="view-btn active" id="btnList" onclick="setView('list')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+          リスト
+        </button>
+        <button class="view-btn" id="btnKanban" onclick="setView('kanban')">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="12" rx="1"/><rect x="17" y="3" width="5" height="15" rx="1"/></svg>
+          カンバン
+        </button>
       </div>
 
-      <!-- タスクリスト -->
-      <div class="card">
-        <div id="taskContainer"><div class="empty-tasks">読み込み中...</div></div>
+      <!-- リストビュー -->
+      <div id="listView">
+        <div class="card">
+          <div id="taskContainer"><div class="empty-tasks">読み込み中...</div></div>
+        </div>
+      </div>
+
+      <!-- カンバンビュー -->
+      <div id="kanbanView" style="display:none;">
+        <div class="kanban-board">
+          <div class="kanban-col" id="col-todo"
+            ondragover="onDragOver(event,'todo')" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'todo')">
+            <div class="kanban-col-header">
+              <div style="display:flex;align-items:center;">
+                <div class="dot" style="background:#94a3b8;"></div>未着手
+              </div>
+              <span class="k-cnt" id="cnt-todo">0</span>
+            </div>
+            <div id="cards-todo"></div>
+          </div>
+          <div class="kanban-col" id="col-in_progress"
+            ondragover="onDragOver(event,'in_progress')" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'in_progress')">
+            <div class="kanban-col-header">
+              <div style="display:flex;align-items:center;">
+                <div class="dot" style="background:#0ea5e9;"></div>進行中
+              </div>
+              <span class="k-cnt" id="cnt-in_progress">0</span>
+            </div>
+            <div id="cards-in_progress"></div>
+          </div>
+          <div class="kanban-col" id="col-done"
+            ondragover="onDragOver(event,'done')" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'done')">
+            <div class="kanban-col-header">
+              <div style="display:flex;align-items:center;">
+                <div class="dot" style="background:#22c55e;"></div>完了
+              </div>
+              <span class="k-cnt" id="cnt-done">0</span>
+            </div>
+            <div id="cards-done"></div>
+          </div>
+        </div>
       </div>
 
     </div>
   </main>
 
-  <!-- タスク追加モーダル -->
+  <!-- タスク追加/編集モーダル -->
   <div id="taskModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;">
     <div style="background:#fff;border-radius:12px;padding:28px;width:460px;max-width:95vw;box-shadow:0 16px 48px rgba(0,0,0,.18);">
-      <div style="font-size:15px;font-weight:800;color:var(--primary);margin-bottom:20px;">タスクを追加</div>
+      <div style="font-size:15px;font-weight:800;color:var(--primary);margin-bottom:20px;" id="modalTitle">タスクを追加</div>
       <input type="hidden" id="editTaskId">
       <div class="form-group">
         <label class="form-label">内容 <span class="required">*</span></label>
@@ -146,6 +217,14 @@
           <input type="text" class="form-input" id="modalAssignedTo" placeholder="メールアドレス">
         </div>
       </div>
+      <div class="form-group">
+        <label class="form-label">ステータス</label>
+        <select class="form-select" id="modalStatus">
+          <option value="todo">未着手</option>
+          <option value="in_progress">進行中</option>
+          <option value="done">完了</option>
+        </select>
+      </div>
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:8px;">
         <button class="btn btn-ghost" onclick="closeModal()">キャンセル</button>
         <button class="btn btn-primary" id="modalSaveBtn">保存</button>
@@ -158,9 +237,18 @@
   <script src="/assets/js/utils.js"></script>
   <script>
     let allTasks = [];
-    let currentScope  = 'mine';   // mine | all
-    let currentStatus = 'pending'; // pending | done
+    let currentScope = 'mine';
+    let currentView  = 'list';
     let myEmail = '';
+    let draggingId = null;
+
+    const STATUS_LABEL = { todo: '未着手', in_progress: '進行中', done: '完了', pending: '未着手' };
+
+    // pending → todo に正規化
+    function normalize(t) {
+      if (t.status === 'pending' || !t.status) t.status = 'todo';
+      return t;
+    }
 
     initPage(async (user) => {
       myEmail = user?.email || '';
@@ -169,105 +257,175 @@
 
     async function load() {
       try {
-        allTasks = await API.activities.listStandalone();
-        renderTasks();
-      } catch(e) {
-        Toast.error('読み込みエラー: ' + e.message);
-      }
+        const raw = await API.activities.listStandalone();
+        allTasks = raw.map(normalize);
+        render();
+      } catch(e) { Toast.error('読み込みエラー: ' + e.message); }
     }
 
     function setScope(scope, btn) {
       currentScope = scope;
       document.querySelectorAll('[data-scope]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      renderTasks();
+      render();
     }
 
-    function setStatus(status, btn) {
-      currentStatus = status;
-      document.querySelectorAll('[data-status]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      renderTasks();
+    function setView(view) {
+      currentView = view;
+      document.getElementById('listView').style.display   = view === 'list'   ? 'block' : 'none';
+      document.getElementById('kanbanView').style.display = view === 'kanban' ? 'block' : 'none';
+      document.getElementById('btnList').classList.toggle('active',   view === 'list');
+      document.getElementById('btnKanban').classList.toggle('active', view === 'kanban');
+      render();
     }
 
-    function renderTasks() {
+    function filtered() {
       const q = (document.getElementById('taskSearch').value || '').toLowerCase();
-      const today = new Date().toISOString().slice(0, 10);
-      const weekEnd = new Date(Date.now() + 6 * 86400000).toISOString().slice(0, 10);
-
-      let tasks = allTasks.filter(t => {
-        if (currentStatus === 'done'    && t.status !== 'done')    return false;
-        if (currentStatus === 'pending' && t.status === 'done')    return false;
-        if (currentScope  === 'mine'   && t.assigned_to !== myEmail) return false;
-        if (q && !t.content?.toLowerCase().includes(q))           return false;
+      return allTasks.filter(t => {
+        if (currentScope === 'mine' && t.assigned_to !== myEmail) return false;
+        if (q && !t.content?.toLowerCase().includes(q)) return false;
         return true;
       });
+    }
+
+    function render() {
+      if (currentView === 'list') renderList();
+      else renderKanban();
+    }
+
+    // ===== リストビュー =====
+    function renderList() {
+      const today   = new Date().toISOString().slice(0, 10);
+      const weekEnd = new Date(Date.now() + 6 * 86400000).toISOString().slice(0, 10);
+      const tasks   = filtered();
+
+      const active = tasks.filter(t => t.status !== 'done');
+      const done   = tasks.filter(t => t.status === 'done');
 
       if (!tasks.length) {
         document.getElementById('taskContainer').innerHTML = '<div class="empty-tasks">タスクがありません</div>';
         return;
       }
 
-      if (currentStatus === 'done') {
-        // 完了済みはフラットに表示
-        document.getElementById('taskContainer').innerHTML = tasks.map(t => taskRow(t, today)).join('');
-        return;
-      }
-
-      // 未完了: 期日グループ分け
       const groups = [
-        { key: 'overdue',  label: '⚠️ 期限超過',  tasks: tasks.filter(t => t.due_date && t.due_date < today) },
-        { key: 'today',    label: '今日',          tasks: tasks.filter(t => t.due_date === today) },
-        { key: 'week',     label: '今週',          tasks: tasks.filter(t => t.due_date && t.due_date > today && t.due_date <= weekEnd) },
-        { key: 'later',    label: 'それ以降',       tasks: tasks.filter(t => t.due_date && t.due_date > weekEnd) },
-        { key: 'nodate',   label: '期日なし',       tasks: tasks.filter(t => !t.due_date) },
-      ].filter(g => g.tasks.length);
+        { label:'⚠️ 期限超過', items: active.filter(t => t.due_date && t.due_date < today) },
+        { label:'今日',        items: active.filter(t => t.due_date === today) },
+        { label:'今週',        items: active.filter(t => t.due_date && t.due_date > today && t.due_date <= weekEnd) },
+        { label:'それ以降',    items: active.filter(t => t.due_date && t.due_date > weekEnd) },
+        { label:'期日なし',    items: active.filter(t => !t.due_date) },
+        { label:'完了済み',    items: done },
+      ].filter(g => g.items.length);
 
       document.getElementById('taskContainer').innerHTML = groups.map(g => `
         <div>
-          <div class="task-group-title">${g.label}<span class="count">${g.tasks.length}</span></div>
-          ${g.tasks.map(t => taskRow(t, today)).join('')}
-        </div>
-      `).join('');
+          <div class="task-group-title">${g.label}<span class="cnt">${g.items.length}</span></div>
+          ${g.items.map(t => listRow(t, today)).join('')}
+        </div>`).join('');
     }
 
-    function taskRow(t, today) {
+    function listRow(t, today) {
       const done    = t.status === 'done';
       const overdue = t.due_date && t.due_date < today && !done;
       const isToday = t.due_date === today && !done;
       const dueCls  = overdue ? 'overdue' : isToday ? 'today' : '';
-      const dueLabel = t.due_date
-        ? (overdue ? '⚠️ ' : '') + fmtDate(t.due_date)
-        : '期日なし';
+      const dueLabel = t.due_date ? (overdue ? '⚠️ ' : '') + fmtDate(t.due_date) : '期日なし';
       return `
-        <div class="task-row ${done ? 'done' : ''}" id="trow-${t.id}">
+        <div class="task-row ${done ? 'done' : ''}">
           <input type="checkbox" class="task-check" ${done ? 'checked' : ''}
-            onchange="toggleDone('${t.id}','${t.status}')">
+            onchange="quickStatus('${t.id}', this.checked ? 'done' : 'todo')">
           <div style="flex:1;min-width:0;">
-            <div class="task-text">${escHtml(t.content || '')}</div>
+            <div class="task-text">${escHtml(t.content||'')}</div>
             <div class="task-meta">
               <span class="${dueCls}">${dueLabel}</span>
               ${t.assigned_to ? `<span>担当: ${escHtml(t.assigned_to)}</span>` : ''}
+              <select class="status-sel" onchange="quickStatus('${t.id}',this.value)">
+                <option value="todo"        ${t.status==='todo'?'selected':''}>未着手</option>
+                <option value="in_progress" ${t.status==='in_progress'?'selected':''}>進行中</option>
+                <option value="done"        ${t.status==='done'?'selected':''}>完了</option>
+              </select>
             </div>
           </div>
-          <button class="task-del" onclick="openEdit('${t.id}')" title="編集" style="font-size:14px;color:var(--text-muted);">✎</button>
+          <button class="task-del" onclick="openEdit('${t.id}')" title="編集" style="font-size:14px;">✎</button>
           <button class="task-del" onclick="deleteTask('${t.id}')" title="削除">×</button>
         </div>`;
     }
 
-    function escHtml(s) {
-      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    // ===== カンバンビュー =====
+    function renderKanban() {
+      const today = new Date().toISOString().slice(0, 10);
+      const tasks = filtered();
+      const cols  = { todo: [], in_progress: [], done: [] };
+      tasks.forEach(t => { (cols[t.status] || cols.todo).push(t); });
+
+      ['todo','in_progress','done'].forEach(s => {
+        document.getElementById('cnt-' + s).textContent = cols[s].length;
+        document.getElementById('cards-' + s).innerHTML =
+          cols[s].length ? cols[s].map(t => kanbanCard(t, today)).join('') : `<div style="text-align:center;font-size:12px;color:var(--text-muted);padding:20px 0;">なし</div>`;
+      });
+    }
+
+    function kanbanCard(t, today) {
+      const overdue = t.due_date && t.due_date < today && t.status !== 'done';
+      const isToday = t.due_date === today && t.status !== 'done';
+      const dueCls  = overdue ? 'k-overdue' : isToday ? 'k-today' : '';
+      const dueLabel = t.due_date ? (overdue ? '⚠️ ' : '') + fmtDate(t.due_date) : '';
+      return `
+        <div class="kanban-card ${t.status}"
+          draggable="true"
+          ondragstart="onDragStart(event,'${t.id}')"
+          ondragend="onDragEnd(event)">
+          <div class="k-actions">
+            <button class="k-act-btn" onclick="openEdit('${t.id}')" title="編集">✎</button>
+            <button class="k-act-btn" onclick="deleteTask('${t.id}')" title="削除" style="color:#ef4444;">×</button>
+          </div>
+          <div class="k-title">${escHtml(t.content||'')}</div>
+          <div class="k-meta">
+            ${dueLabel ? `<span class="${dueCls}">${dueLabel}</span>` : ''}
+            ${t.assigned_to ? `<span>${escHtml(t.assigned_to.split('@')[0])}</span>` : ''}
+          </div>
+        </div>`;
+    }
+
+    // ===== ドラッグ&ドロップ =====
+    function onDragStart(e, id) {
+      draggingId = id;
+      e.target.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    }
+    function onDragEnd(e) { e.target.classList.remove('dragging'); }
+    function onDragOver(e, col) {
+      e.preventDefault();
+      document.getElementById('col-' + col).classList.add('drag-over');
+    }
+    function onDragLeave(e) {
+      document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over'));
+    }
+    async function onDrop(e, newStatus) {
+      e.preventDefault();
+      document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over'));
+      if (!draggingId) return;
+      const t = allTasks.find(x => x.id === draggingId);
+      if (!t || t.status === newStatus) return;
+      t.status = newStatus;
+      renderKanban();
+      try {
+        await API.activities.update({ id: t.id, status: newStatus });
+      } catch(err) {
+        Toast.error('更新エラー: ' + err.message);
+        t.status = t._prevStatus;
+        renderKanban();
+      }
+      draggingId = null;
     }
 
     // ===== CRUD =====
-    async function toggleDone(id, status) {
-      const newStatus = status === 'done' ? 'pending' : 'done';
-      try {
-        await API.activities.update({ id, status: newStatus });
-        const t = allTasks.find(x => x.id === id);
-        if (t) t.status = newStatus;
-        renderTasks();
-      } catch(e) { Toast.error('更新エラー: ' + e.message); }
+    async function quickStatus(id, newStatus) {
+      const t = allTasks.find(x => x.id === id);
+      if (!t) return;
+      t.status = newStatus;
+      render();
+      try { await API.activities.update({ id, status: newStatus }); }
+      catch(e) { Toast.error('更新エラー: ' + e.message); await load(); }
     }
 
     async function deleteTask(id) {
@@ -275,17 +433,19 @@
       try {
         await API.activities.delete(id);
         allTasks = allTasks.filter(t => t.id !== id);
-        renderTasks();
+        render();
         Toast.success('削除しました');
       } catch(e) { Toast.error('削除エラー: ' + e.message); }
     }
 
     // ===== モーダル =====
     function openModal() {
-      document.getElementById('editTaskId').value = '';
+      document.getElementById('modalTitle').textContent = 'タスクを追加';
+      document.getElementById('editTaskId').value  = '';
       document.getElementById('modalContent').value = '';
       document.getElementById('modalDueDate').value = '';
       document.getElementById('modalAssignedTo').value = myEmail;
+      document.getElementById('modalStatus').value = 'todo';
       document.getElementById('taskModal').style.display = 'flex';
       document.getElementById('modalContent').focus();
     }
@@ -293,19 +453,20 @@
     function openEdit(id) {
       const t = allTasks.find(x => x.id === id);
       if (!t) return;
-      document.getElementById('editTaskId').value = t.id;
+      document.getElementById('modalTitle').textContent = 'タスクを編集';
+      document.getElementById('editTaskId').value  = t.id;
       document.getElementById('modalContent').value = t.content || '';
       document.getElementById('modalDueDate').value = t.due_date || '';
       document.getElementById('modalAssignedTo').value = t.assigned_to || '';
+      document.getElementById('modalStatus').value = t.status || 'todo';
       document.getElementById('taskModal').style.display = 'flex';
       document.getElementById('modalContent').focus();
     }
 
-    function closeModal() {
-      document.getElementById('taskModal').style.display = 'none';
-    }
+    function closeModal() { document.getElementById('taskModal').style.display = 'none'; }
 
     document.getElementById('addTaskBtn').addEventListener('click', openModal);
+    document.getElementById('taskModal').addEventListener('click', e => { if (e.target === document.getElementById('taskModal')) closeModal(); });
 
     document.getElementById('modalSaveBtn').addEventListener('click', async () => {
       const content = document.getElementById('modalContent').value.trim();
@@ -313,31 +474,31 @@
       const editId  = document.getElementById('editTaskId').value;
       const payload = {
         content,
-        due_date:    document.getElementById('modalDueDate').value || null,
+        due_date:    document.getElementById('modalDueDate').value    || null,
         assigned_to: document.getElementById('modalAssignedTo').value.trim() || null,
+        status:      document.getElementById('modalStatus').value,
         is_task:     true,
-        status:      'pending',
+        type:        'タスク',
       };
       try {
         if (editId) {
           await API.activities.update({ id: editId, ...payload });
           const idx = allTasks.findIndex(t => t.id === editId);
-          if (idx >= 0) allTasks[idx] = { ...allTasks[idx], ...payload };
+          if (idx >= 0) allTasks[idx] = normalize({ ...allTasks[idx], ...payload });
           Toast.success('更新しました');
         } else {
-          const created = await API.activities.create({ ...payload, type: 'タスク' });
-          allTasks.unshift(created);
+          const created = await API.activities.create(payload);
+          allTasks.unshift(normalize(created));
           Toast.success('タスクを追加しました');
         }
         closeModal();
-        renderTasks();
+        render();
       } catch(e) { Toast.error('エラー: ' + e.message); }
     });
 
-    // モーダル外クリックで閉じる
-    document.getElementById('taskModal').addEventListener('click', e => {
-      if (e.target === document.getElementById('taskModal')) closeModal();
-    });
+    function escHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
   </script>
 </body>
 </html>
