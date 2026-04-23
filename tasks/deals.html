@@ -3,11 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>タスク管理 | アスナロ SFA</title>
+  <title>案件タスク | アスナロ SFA</title>
   <link rel="stylesheet" href="/assets/css/main.css">
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
   <style>
-    /* ===== 共通 ===== */
     .filter-bar-top {
       display: flex; align-items: center; gap: 10px;
       margin-bottom: 16px; flex-wrap: wrap;
@@ -27,11 +26,36 @@
     .view-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
     .empty-tasks { text-align:center; padding:48px 0; color:var(--text-muted); font-size:13px; }
 
-    /* ===== リストビュー ===== */
+    /* グループヘッダー（案件名） */
+    .deal-group-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 0 8px;
+      border-bottom: 2px solid var(--accent);
+      margin-bottom: 4px;
+    }
+    .deal-group-title {
+      font-size: 12px; font-weight: 800; color: var(--primary);
+      letter-spacing: .04em;
+    }
+    .deal-group-link {
+      font-size: 11px; font-weight: 600; color: var(--accent);
+      text-decoration: none;
+    }
+    .deal-group-link:hover { text-decoration: underline; }
+    .deal-group-cnt {
+      font-size: 11px; font-weight: 700; background: var(--bg);
+      border-radius: 10px; padding: 1px 8px; color: var(--text-muted);
+    }
+    .deal-group-phase {
+      font-size: 10px; padding: 1px 7px; border-radius: 10px;
+      background: #e0f2fe; color: #0369a1; font-weight: 700;
+    }
+
+    /* タスク行 */
     .task-group-title {
       font-size: 11px; font-weight: 800; color: var(--primary);
       letter-spacing: .06em; text-transform: uppercase;
-      padding: 16px 0 8px; border-bottom: 2px solid var(--accent);
+      padding: 12px 0 6px; border-bottom: 1px solid #e2e8f0;
       margin-bottom: 4px; display: flex; align-items: center; gap: 8px;
     }
     .task-group-title .cnt {
@@ -40,7 +64,7 @@
     }
     .task-row {
       display: flex; align-items: flex-start; gap: 12px;
-      padding: 12px 0; border-bottom: 1px solid #f1f5f9;
+      padding: 11px 0; border-bottom: 1px solid #f1f5f9;
     }
     .task-row:last-child { border-bottom: none; }
     .task-row.done .task-text { text-decoration: line-through; opacity: .45; }
@@ -53,18 +77,14 @@
     .task-del:hover { color:#ef4444; }
     .status-sel { font-size:11px; border:1px solid var(--border); border-radius:4px; padding:2px 4px; cursor:pointer; background:#fff; }
 
-    /* ===== カンバンビュー ===== */
+    /* カンバン */
     .kanban-board {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-      align-items: start;
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 16px; align-items: start;
     }
     .kanban-col {
-      background: var(--bg);
-      border-radius: 10px;
-      padding: 12px;
-      min-height: 200px;
+      background: var(--bg); border-radius: 10px;
+      padding: 12px; min-height: 200px;
     }
     .kanban-col.drag-over { outline: 2px dashed var(--accent); }
     .kanban-col-header {
@@ -72,20 +92,12 @@
       letter-spacing: .04em; margin-bottom: 10px;
       display: flex; align-items: center; justify-content: space-between;
     }
-    .kanban-col-header .dot {
-      width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; flex-shrink: 0;
-    }
+    .kanban-col-header .dot { width:10px; height:10px; border-radius:50%; margin-right:6px; flex-shrink:0; }
     .k-cnt { font-size:11px; font-weight:700; background:#fff; border-radius:10px; padding:1px 8px; color:var(--text-muted); }
-
     .kanban-card {
-      background: #fff;
-      border-radius: 8px;
-      padding: 12px;
-      margin-bottom: 8px;
-      box-shadow: 0 1px 4px rgba(0,0,0,.07);
-      cursor: grab;
-      border-left: 3px solid transparent;
-      position: relative;
+      background: #fff; border-radius: 8px; padding: 12px;
+      margin-bottom: 8px; box-shadow: 0 1px 4px rgba(0,0,0,.07);
+      cursor: grab; border-left: 3px solid transparent; position: relative;
     }
     .kanban-card:active { cursor: grabbing; opacity: .7; }
     .kanban-card.dragging { opacity: .4; }
@@ -93,16 +105,17 @@
     .kanban-card .k-meta  { font-size:11px; color:var(--text-muted); display:flex; gap:8px; flex-wrap:wrap; }
     .kanban-card .k-overdue { color:#ef4444; font-weight:700; }
     .kanban-card .k-today   { color:#f59e0b; font-weight:700; }
-    .kanban-card .k-actions {
-      position:absolute; top:8px; right:8px;
-      display:none; gap:4px;
-    }
+    .kanban-card .k-actions { position:absolute; top:8px; right:8px; display:none; gap:4px; }
     .kanban-card:hover .k-actions { display:flex; }
     .k-act-btn { background:none; border:none; cursor:pointer; color:var(--text-muted); font-size:13px; padding:2px; line-height:1; }
     .k-act-btn:hover { color:var(--primary); }
-    .kanban-card.todo     { border-left-color: #94a3b8; }
+    .kanban-card.todo        { border-left-color: #94a3b8; }
     .kanban-card.in_progress { border-left-color: #0ea5e9; }
-    .kanban-card.done     { border-left-color: #22c55e; }
+    .kanban-card.done        { border-left-color: #22c55e; }
+    .k-deal-badge {
+      font-size: 10px; font-weight: 700; color: var(--accent);
+      background: #e0f2fe; padding: 1px 6px; border-radius: 8px; white-space: nowrap;
+    }
   </style>
 </head>
 <body class="app-layout">
@@ -113,8 +126,8 @@
       <a href="/" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>ダッシュボード</a>
       <a href="/deals/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>案件管理</a>
       <a href="/customers/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>顧客管理</a>
-      <a href="/tasks/index.html" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><polyline points="9 11 12 14 22 4"/><line x1="3" y1="10" x2="9" y2="10"/></svg>全社タスク</a>
-      <a href="/tasks/deals.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="9 12 11 14 15 10"/></svg>案件タスク</a>
+      <a href="/tasks/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><polyline points="9 11 12 14 22 4"/><line x1="3" y1="10" x2="9" y2="10"/></svg>全社タスク</a>
+      <a href="/tasks/deals.html" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="9 12 11 14 15 10"/></svg>案件タスク</a>
       <a href="/announcements/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>お知らせ</a>
       <a href="/wiki/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>社内Wiki</a>
       <a href="/documents/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>ドキュメント</a>
@@ -129,8 +142,8 @@
   <main class="main-content">
     <div class="page-header">
       <div>
-        <h1 class="page-title">タスク管理</h1>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">案件・顧客に紐づかない全社共通タスク（案件タスクは「案件タスク」ページへ）</div>
+        <h1 class="page-title">案件タスク</h1>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">案件に紐づいたネクストアクション・タスク一覧</div>
       </div>
       <div class="page-actions">
         <button class="btn btn-primary" id="addTaskBtn">+ タスクを追加</button>
@@ -142,11 +155,13 @@
       <!-- フィルターバー -->
       <div class="filter-bar-top">
         <button class="seg-btn active" data-scope="mine" onclick="setScope('mine',this)">自分のタスク</button>
-        <button class="seg-btn" data-scope="all"  onclick="setScope('all',this)">全員</button>
+        <button class="seg-btn" data-scope="all" onclick="setScope('all',this)">全員</button>
         <div style="width:1px;height:20px;background:var(--border);margin:0 4px;"></div>
-        <input type="text" class="search-input" id="taskSearch" placeholder="タスクを検索" style="width:180px;" oninput="render()">
+        <select class="form-select" id="dealFilter" onchange="render()" style="font-size:12px;padding:5px 10px;width:200px;">
+          <option value="">すべての案件</option>
+        </select>
+        <input type="text" class="search-input" id="taskSearch" placeholder="タスクを検索" style="width:160px;" oninput="render()">
         <div style="flex:1;"></div>
-        <!-- ビュー切替 -->
         <button class="view-btn active" id="btnList" onclick="setView('list')">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
           リスト
@@ -170,9 +185,7 @@
           <div class="kanban-col" id="col-todo"
             ondragover="onDragOver(event,'todo')" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'todo')">
             <div class="kanban-col-header">
-              <div style="display:flex;align-items:center;">
-                <div class="dot" style="background:#94a3b8;"></div>未着手
-              </div>
+              <div style="display:flex;align-items:center;"><div class="dot" style="background:#94a3b8;"></div>未着手</div>
               <span class="k-cnt" id="cnt-todo">0</span>
             </div>
             <div id="cards-todo"></div>
@@ -180,9 +193,7 @@
           <div class="kanban-col" id="col-in_progress"
             ondragover="onDragOver(event,'in_progress')" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'in_progress')">
             <div class="kanban-col-header">
-              <div style="display:flex;align-items:center;">
-                <div class="dot" style="background:#0ea5e9;"></div>進行中
-              </div>
+              <div style="display:flex;align-items:center;"><div class="dot" style="background:#0ea5e9;"></div>進行中</div>
               <span class="k-cnt" id="cnt-in_progress">0</span>
             </div>
             <div id="cards-in_progress"></div>
@@ -190,9 +201,7 @@
           <div class="kanban-col" id="col-done"
             ondragover="onDragOver(event,'done')" ondragleave="onDragLeave(event)" ondrop="onDrop(event,'done')">
             <div class="kanban-col-header">
-              <div style="display:flex;align-items:center;">
-                <div class="dot" style="background:#22c55e;"></div>完了
-              </div>
+              <div style="display:flex;align-items:center;"><div class="dot" style="background:#22c55e;"></div>完了</div>
               <span class="k-cnt" id="cnt-done">0</span>
             </div>
             <div id="cards-done"></div>
@@ -205,9 +214,15 @@
 
   <!-- タスク追加/編集モーダル -->
   <div id="taskModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:500;align-items:center;justify-content:center;">
-    <div style="background:#fff;border-radius:12px;padding:28px;width:460px;max-width:95vw;box-shadow:0 16px 48px rgba(0,0,0,.18);">
+    <div style="background:#fff;border-radius:12px;padding:28px;width:480px;max-width:95vw;box-shadow:0 16px 48px rgba(0,0,0,.18);">
       <div style="font-size:15px;font-weight:800;color:var(--primary);margin-bottom:20px;" id="modalTitle">タスクを追加</div>
       <input type="hidden" id="editTaskId">
+      <div class="form-group">
+        <label class="form-label">紐づく案件 <span class="required">*</span></label>
+        <select class="form-select" id="modalDealId">
+          <option value="">案件を選択...</option>
+        </select>
+      </div>
       <div class="form-group">
         <label class="form-label">内容 <span class="required">*</span></label>
         <textarea class="form-textarea" id="modalContent" placeholder="タスクの内容を入力..." style="min-height:80px;"></textarea>
@@ -242,14 +257,13 @@
   <script src="/assets/js/utils.js"></script>
   <script>
     let allTasks = [];
+    let dealMap  = {};   // deal_id → { company_name, phase, id }
+    let dealList = [];
     let currentScope = 'mine';
     let currentView  = 'list';
     let myEmail = '';
     let draggingId = null;
 
-    const STATUS_LABEL = { todo: '未着手', in_progress: '進行中', done: '完了', pending: '未着手' };
-
-    // pending → todo に正規化
     function normalize(t) {
       if (t.status === 'pending' || !t.status) t.status = 'todo';
       return t;
@@ -262,10 +276,50 @@
 
     async function load() {
       try {
-        const raw = await API.activities.listStandalone();
-        allTasks = raw.map(normalize);
+        const [rawTasks, rawDeals] = await Promise.all([
+          API.activities.listTasks(),
+          API.deals.list(),
+        ]);
+
+        dealList = rawDeals || [];
+        dealMap  = {};
+        dealList.forEach(d => { dealMap[d.id] = d; });
+
+        allTasks = (rawTasks || [])
+          .filter(t => t.deal_id)
+          .map(normalize);
+
+        buildDealFilter();
         render();
       } catch(e) { Toast.error('読み込みエラー: ' + e.message); }
+    }
+
+    function buildDealFilter() {
+      const sel = document.getElementById('dealFilter');
+      const cur = sel.value;
+      sel.innerHTML = '<option value="">すべての案件</option>';
+      const usedIds = [...new Set(allTasks.map(t => t.deal_id).filter(Boolean))];
+      usedIds.forEach(id => {
+        const d = dealMap[id];
+        if (!d) return;
+        const opt = document.createElement('option');
+        opt.value = id;
+        opt.textContent = d.company_name || id;
+        sel.appendChild(opt);
+      });
+      if (cur) sel.value = cur;
+
+      // モーダルの案件セレクトも更新
+      const mSel = document.getElementById('modalDealId');
+      const mCur = mSel.value;
+      mSel.innerHTML = '<option value="">案件を選択...</option>';
+      dealList.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.id;
+        opt.textContent = d.company_name || d.id;
+        mSel.appendChild(opt);
+      });
+      if (mCur) mSel.value = mCur;
     }
 
     function setScope(scope, btn) {
@@ -285,9 +339,11 @@
     }
 
     function filtered() {
-      const q = (document.getElementById('taskSearch').value || '').toLowerCase();
+      const q          = (document.getElementById('taskSearch').value || '').toLowerCase();
+      const filterDeal = document.getElementById('dealFilter').value;
       return allTasks.filter(t => {
         if (currentScope === 'mine' && t.assigned_to !== myEmail) return false;
+        if (filterDeal && t.deal_id !== filterDeal) return false;
         if (q && !t.content?.toLowerCase().includes(q)) return false;
         return true;
       });
@@ -298,34 +354,65 @@
       else renderKanban();
     }
 
-    // ===== リストビュー =====
+    // ===== リストビュー（案件グループ） =====
     function renderList() {
       const today   = new Date().toISOString().slice(0, 10);
-      const weekEnd = new Date(Date.now() + 6 * 86400000).toISOString().slice(0, 10);
       const tasks   = filtered();
-
-      const active = tasks.filter(t => t.status !== 'done');
-      const done   = tasks.filter(t => t.status === 'done');
 
       if (!tasks.length) {
         document.getElementById('taskContainer').innerHTML = '<div class="empty-tasks">タスクがありません</div>';
         return;
       }
 
-      const groups = [
-        { label:'⚠️ 期限超過', items: active.filter(t => t.due_date && t.due_date < today) },
-        { label:'今日',        items: active.filter(t => t.due_date === today) },
-        { label:'今週',        items: active.filter(t => t.due_date && t.due_date > today && t.due_date <= weekEnd) },
-        { label:'それ以降',    items: active.filter(t => t.due_date && t.due_date > weekEnd) },
-        { label:'期日なし',    items: active.filter(t => !t.due_date) },
-        { label:'完了済み',    items: done },
-      ].filter(g => g.items.length);
+      // 案件ごとにグループ化
+      const groups = {};
+      tasks.forEach(t => {
+        const key = t.deal_id || '__none__';
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(t);
+      });
 
-      document.getElementById('taskContainer').innerHTML = groups.map(g => `
-        <div>
-          <div class="task-group-title">${g.label}<span class="cnt">${g.items.length}</span></div>
-          ${g.items.map(t => listRow(t, today)).join('')}
-        </div>`).join('');
+      // 案件名でソート（未完タスクが多い順）
+      const sorted = Object.entries(groups).sort(([,a],[,b]) => {
+        const aActive = a.filter(t => t.status !== 'done').length;
+        const bActive = b.filter(t => t.status !== 'done').length;
+        return bActive - aActive;
+      });
+
+      const html = sorted.map(([dealId, items]) => {
+        const deal = dealMap[dealId];
+        const dealName = deal?.company_name || '(案件不明)';
+        const dealHref = deal ? `/deals/detail.html?id=${deal.id}` : '#';
+        const phase    = deal?.phase || '';
+        const active   = items.filter(t => t.status !== 'done');
+        const done     = items.filter(t => t.status === 'done');
+
+        const subGroups = [
+          { label:'⚠️ 期限超過', items: active.filter(t => t.due_date && t.due_date < today) },
+          { label:'今日',        items: active.filter(t => t.due_date === today) },
+          { label:'今週',        items: active.filter(t => { const d = t.due_date; const w = new Date(Date.now()+6*86400000).toISOString().slice(0,10); return d && d > today && d <= w; }) },
+          { label:'それ以降',    items: active.filter(t => { const w = new Date(Date.now()+6*86400000).toISOString().slice(0,10); return t.due_date && t.due_date > w; }) },
+          { label:'期日なし',    items: active.filter(t => !t.due_date) },
+          { label:'完了済み',    items: done },
+        ].filter(g => g.items.length);
+
+        return `
+          <div style="margin-bottom:24px;">
+            <div class="deal-group-header">
+              <span class="deal-group-title">${escHtml(dealName)}</span>
+              ${phase ? `<span class="deal-group-phase">${escHtml(phase)}</span>` : ''}
+              <a href="${dealHref}" class="deal-group-link" title="案件を開く">→ 案件を開く</a>
+              <span class="deal-group-cnt">${items.length}件</span>
+            </div>
+            ${subGroups.map(g => `
+              <div>
+                <div class="task-group-title">${g.label}<span class="cnt">${g.items.length}</span></div>
+                ${g.items.map(t => listRow(t, today)).join('')}
+              </div>`).join('')}
+          </div>`;
+      }).join('');
+
+      document.getElementById('taskContainer').innerHTML = html;
     }
 
     function listRow(t, today) {
@@ -365,15 +452,18 @@
       ['todo','in_progress','done'].forEach(s => {
         document.getElementById('cnt-' + s).textContent = cols[s].length;
         document.getElementById('cards-' + s).innerHTML =
-          cols[s].length ? cols[s].map(t => kanbanCard(t, today)).join('') : `<div style="text-align:center;font-size:12px;color:var(--text-muted);padding:20px 0;">なし</div>`;
+          cols[s].length ? cols[s].map(t => kanbanCard(t, today)).join('') :
+          `<div style="text-align:center;font-size:12px;color:var(--text-muted);padding:20px 0;">なし</div>`;
       });
     }
 
     function kanbanCard(t, today) {
-      const overdue = t.due_date && t.due_date < today && t.status !== 'done';
-      const isToday = t.due_date === today && t.status !== 'done';
-      const dueCls  = overdue ? 'k-overdue' : isToday ? 'k-today' : '';
+      const overdue  = t.due_date && t.due_date < today && t.status !== 'done';
+      const isToday  = t.due_date === today && t.status !== 'done';
+      const dueCls   = overdue ? 'k-overdue' : isToday ? 'k-today' : '';
       const dueLabel = t.due_date ? (overdue ? '⚠️ ' : '') + fmtDate(t.due_date) : '';
+      const deal     = dealMap[t.deal_id];
+      const dealName = deal?.company_name || '';
       return `
         <div class="kanban-card ${t.status}"
           draggable="true"
@@ -385,26 +475,18 @@
           </div>
           <div class="k-title">${escHtml(t.content||'')}</div>
           <div class="k-meta">
+            ${dealName ? `<span class="k-deal-badge">${escHtml(dealName)}</span>` : ''}
             ${dueLabel ? `<span class="${dueCls}">${dueLabel}</span>` : ''}
             ${t.assigned_to ? `<span>${escHtml(t.assigned_to.split('@')[0])}</span>` : ''}
           </div>
         </div>`;
     }
 
-    // ===== ドラッグ&ドロップ =====
-    function onDragStart(e, id) {
-      draggingId = id;
-      e.target.classList.add('dragging');
-      e.dataTransfer.effectAllowed = 'move';
-    }
+    // ===== D&D =====
+    function onDragStart(e, id) { draggingId = id; e.target.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
     function onDragEnd(e) { e.target.classList.remove('dragging'); }
-    function onDragOver(e, col) {
-      e.preventDefault();
-      document.getElementById('col-' + col).classList.add('drag-over');
-    }
-    function onDragLeave(e) {
-      document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over'));
-    }
+    function onDragOver(e, col) { e.preventDefault(); document.getElementById('col-' + col).classList.add('drag-over'); }
+    function onDragLeave(e) { document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over')); }
     async function onDrop(e, newStatus) {
       e.preventDefault();
       document.querySelectorAll('.kanban-col').forEach(c => c.classList.remove('drag-over'));
@@ -413,13 +495,8 @@
       if (!t || t.status === newStatus) return;
       t.status = newStatus;
       renderKanban();
-      try {
-        await API.activities.update({ id: t.id, status: newStatus });
-      } catch(err) {
-        Toast.error('更新エラー: ' + err.message);
-        t.status = t._prevStatus;
-        renderKanban();
-      }
+      try { await API.activities.update({ id: t.id, status: newStatus }); }
+      catch(err) { Toast.error('更新エラー: ' + err.message); await load(); }
       draggingId = null;
     }
 
@@ -446,11 +523,14 @@
     // ===== モーダル =====
     function openModal() {
       document.getElementById('modalTitle').textContent = 'タスクを追加';
-      document.getElementById('editTaskId').value  = '';
+      document.getElementById('editTaskId').value   = '';
       document.getElementById('modalContent').value = '';
       document.getElementById('modalDueDate').value = '';
       document.getElementById('modalAssignedTo').value = myEmail;
-      document.getElementById('modalStatus').value = 'todo';
+      document.getElementById('modalStatus').value  = 'todo';
+      // フィルター中の案件をデフォルトで選択
+      const filterDeal = document.getElementById('dealFilter').value;
+      document.getElementById('modalDealId').value = filterDeal || '';
       document.getElementById('taskModal').style.display = 'flex';
       document.getElementById('modalContent').focus();
     }
@@ -459,11 +539,12 @@
       const t = allTasks.find(x => x.id === id);
       if (!t) return;
       document.getElementById('modalTitle').textContent = 'タスクを編集';
-      document.getElementById('editTaskId').value  = t.id;
+      document.getElementById('editTaskId').value   = t.id;
       document.getElementById('modalContent').value = t.content || '';
       document.getElementById('modalDueDate').value = t.due_date || '';
       document.getElementById('modalAssignedTo').value = t.assigned_to || '';
-      document.getElementById('modalStatus').value = t.status || 'todo';
+      document.getElementById('modalStatus').value  = t.status || 'todo';
+      document.getElementById('modalDealId').value  = t.deal_id || '';
       document.getElementById('taskModal').style.display = 'flex';
       document.getElementById('modalContent').focus();
     }
@@ -471,14 +552,20 @@
     function closeModal() { document.getElementById('taskModal').style.display = 'none'; }
 
     document.getElementById('addTaskBtn').addEventListener('click', openModal);
-    document.getElementById('taskModal').addEventListener('click', e => { if (e.target === document.getElementById('taskModal')) closeModal(); });
+    document.getElementById('taskModal').addEventListener('click', e => {
+      if (e.target === document.getElementById('taskModal')) closeModal();
+    });
 
     document.getElementById('modalSaveBtn').addEventListener('click', async () => {
       const content = document.getElementById('modalContent').value.trim();
+      const dealId  = document.getElementById('modalDealId').value;
       if (!content) { Toast.error('内容を入力してください'); return; }
+      if (!dealId)  { Toast.error('案件を選択してください'); return; }
+
       const editId  = document.getElementById('editTaskId').value;
       const payload = {
         content,
+        deal_id:     dealId,
         due_date:    document.getElementById('modalDueDate').value    || null,
         assigned_to: document.getElementById('modalAssignedTo').value.trim() || null,
         status:      document.getElementById('modalStatus').value,
@@ -493,7 +580,7 @@
           Toast.success('更新しました');
         } else {
           const created = await API.activities.create(payload);
-          allTasks.unshift(normalize(created));
+          if (created.deal_id) allTasks.unshift(normalize(created));
           Toast.success('タスクを追加しました');
         }
         closeModal();
