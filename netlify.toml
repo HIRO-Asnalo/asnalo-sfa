@@ -42,6 +42,11 @@
   to = "/prospects/index.html"
   status = 200
 
+[[redirects]]
+  from = "/documents"
+  to = "/documents/index.html"
+  status = 200
+
 [[headers]]
   for = "/*"
   [headers.values]

@@ -132,5 +132,17 @@ const API = (() => {
     delete: (id)   => request('DELETE', `/wiki?id=${id}`),
   };
 
-  return { deals, customers, fields, activities, dashboard, ai, ma, goals, reports, contracts, announcements, wiki };
+  // ===== Documents =====
+  const documents = {
+    list:    (filters = {}) => {
+      const q = new URLSearchParams(filters);
+      return request('GET', `/documents${q.toString() ? '?' + q.toString() : ''}`);
+    },
+    presign: (data) => request('POST', '/documents?action=presign', data),
+    getUrl:  (id)   => request('GET',  `/documents?action=url&id=${id}`),
+    update:  (data) => request('PUT',  '/documents', data),
+    delete:  (id)   => request('DELETE', `/documents?id=${id}`),
+  };
+
+  return { deals, customers, fields, activities, dashboard, ai, ma, goals, reports, contracts, announcements, wiki, documents };
 })();
