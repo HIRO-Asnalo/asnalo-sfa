@@ -141,7 +141,7 @@
             <input type="date" class="form-input" id="invDueDate">
           </div>
         </div>
-        <div class="form-row" style="margin-bottom:20px;">
+        <div class="form-row-3" style="margin-bottom:12px;">
           <div class="form-group">
             <label class="form-label">ステータス</label>
             <select class="form-select" id="invStatus">
@@ -156,6 +156,10 @@
             <label class="form-label">消費税率 (%)</label>
             <input type="number" class="form-input" id="invTaxRate" value="10" min="0" max="100" onchange="recalc()">
           </div>
+          <div class="form-group">
+            <label class="form-label">担当者</label>
+            <input type="text" class="form-input" id="invPerson" placeholder="髙木 智史">
+          </div>
         </div>
 
         <!-- 明細 -->
@@ -163,11 +167,12 @@
         <table class="items-table" id="itemsTable">
           <thead>
             <tr>
-              <th style="width:40%;">品名・内容</th>
-              <th style="width:12%;text-align:center;">数量</th>
-              <th style="width:12%;text-align:center;">単位</th>
-              <th style="width:18%;text-align:right;">単価（円）</th>
-              <th style="width:18%;text-align:right;">金額（円）</th>
+              <th style="width:28%;">商品名</th>
+              <th style="width:22%;">詳細</th>
+              <th style="width:10%;text-align:center;">数量</th>
+              <th style="width:8%;text-align:center;">単位</th>
+              <th style="width:16%;text-align:right;">単価（円）</th>
+              <th style="width:16%;text-align:right;">金額（円）</th>
               <th style="width:30px;"></th>
             </tr>
           </thead>
@@ -338,6 +343,7 @@
       document.getElementById('invDueDate').value      = '';
       document.getElementById('invStatus').value       = 'draft';
       document.getElementById('invTaxRate').value      = '10';
+      document.getElementById('invPerson').value       = '';
       document.getElementById('invNotes').value        = '';
       document.getElementById('itemsBody').innerHTML   = '';
       addItem(); addItem(); addItem();
@@ -357,9 +363,10 @@
       document.getElementById('invCustomerName').value = inv.customer_name || '';
       document.getElementById('invIssuedDate').value   = inv.issued_date   || '';
       document.getElementById('invDueDate').value      = inv.due_date      || '';
-      document.getElementById('invStatus').value       = inv.status        || 'draft';
-      document.getElementById('invTaxRate').value      = inv.tax_rate ?? 10;
-      document.getElementById('invNotes').value        = inv.notes         || '';
+      document.getElementById('invStatus').value       = inv.status           || 'draft';
+      document.getElementById('invTaxRate').value      = inv.tax_rate         ?? 10;
+      document.getElementById('invPerson').value       = inv.person_in_charge || '';
+      document.getElementById('invNotes').value        = inv.notes            || '';
       document.getElementById('itemsBody').innerHTML   = '';
       (inv.items || []).forEach(it => addItem(it));
       if (!(inv.items||[]).length) addItem();
@@ -384,7 +391,8 @@
     function addItem(item = {}) {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td><input type="text" placeholder="フルサポ採用 初期費用" value="${escAttr(item.name||'')}" oninput="recalc()"></td>
+        <td><input type="text" placeholder="業務代行月額費用" value="${escAttr(item.name||'')}"></td>
+        <td><input type="text" placeholder="" value="${escAttr(item.details||'')}"></td>
         <td><input type="number" style="text-align:center;" value="${item.qty||1}" min="1" oninput="recalcRow(this)"></td>
         <td><input type="text" style="text-align:center;" placeholder="式" value="${escAttr(item.unit||'')}"></td>
         <td><input type="number" style="text-align:right;" value="${item.unit_price||''}" placeholder="0" oninput="recalcRow(this)"></td>
@@ -420,12 +428,15 @@
 
     function getItems() {
       return Array.from(document.querySelectorAll('#itemsBody tr')).map(tr => {
-        const inputs = tr.querySelectorAll('input');
-        const qty    = Number(tr.querySelectorAll('input[type=number]')[0]?.value)||0;
-        const price  = Number(tr.querySelectorAll('input[type=number]')[1]?.value)||0;
+        const inputs  = tr.querySelectorAll('input');
+        const numInputs = tr.querySelectorAll('input[type=number]');
+        const qty    = Number(numInputs[0]?.value)||0;
+        const price  = Number(numInputs[1]?.value)||0;
         return {
           name:       inputs[0]?.value || '',
-          qty, unit:  inputs[2]?.value || '',
+          details:    inputs[1]?.value || '',
+          qty,
+          unit:       inputs[3]?.value || '',
           unit_price: price,
           amount:     qty * price,
         };
@@ -444,9 +455,10 @@
         issued_date:   document.getElementById('invIssuedDate').value || null,
         due_date:      document.getElementById('invDueDate').value    || null,
         status:        document.getElementById('invStatus').value,
-        tax_rate:      Number(document.getElementById('invTaxRate').value)||10,
-        items:         getItems(),
-        notes:         document.getElementById('invNotes').value.trim() || null,
+        tax_rate:          Number(document.getElementById('invTaxRate').value)||10,
+        person_in_charge:  document.getElementById('invPerson').value.trim() || null,
+        items:             getItems(),
+        notes:             document.getElementById('invNotes').value.trim() || null,
       };
       try {
         if (editId) {
@@ -534,67 +546,130 @@
         <td style="text-align:right;">¥${fmt(it.unit_price)}</td>
         <td style="text-align:right;">¥${fmt(it.amount)}</td></tr>`).join('');
 
+      const fmtDate = d => d ? d.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$1年$2月$3日') : '—';
+      const itemRows = (inv.items||[]).map((it, i) => `
+        <tr>
+          <td style="text-align:center;border:1px solid #bbb;">${i+1}</td>
+          <td style="border:1px solid #bbb;">${escHtml(it.name||'')}</td>
+          <td style="border:1px solid #bbb;">${escHtml(it.details||'')}</td>
+          <td style="text-align:right;border:1px solid #bbb;">${fmt(it.unit_price)}</td>
+          <td style="text-align:center;border:1px solid #bbb;">${it.qty}</td>
+          <td style="text-align:right;border:1px solid #bbb;">${fmt(it.amount)}</td>
+        </tr>`).join('');
+
       const html = `<!DOCTYPE html><html lang="ja"><head>
         <meta charset="UTF-8">
         <title>${typeLabel} | アスナロ SFA</title>
         <style>
           * { box-sizing:border-box; margin:0; padding:0; }
-          body { font-family:'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif; font-size:13px; color:#1e293b; padding:40px; }
-          .header { display:flex; justify-content:space-between; margin-bottom:28px; }
-          .doc-title { font-size:28px; font-weight:900; color:#1e3a5f; }
-          .doc-number { font-size:13px; color:#64748b; margin-top:4px; }
-          .from { text-align:right; font-size:12px; color:#475569; line-height:1.8; }
-          .from-name { font-weight:700; font-size:14px; color:#1e3a5f; }
-          .to { margin-bottom:24px; }
-          .to-name { font-size:16px; font-weight:700; border-bottom:2px solid #1e3a5f; padding-bottom:4px; display:inline-block; margin-bottom:8px; }
-          .amount-large { font-size:24px; font-weight:900; color:#1e3a5f; margin-top:6px; }
-          table.items { width:100%; border-collapse:collapse; margin:20px 0; font-size:12px; }
-          table.items th { background:#1e3a5f; color:#fff; padding:7px 10px; text-align:left; }
-          table.items td { padding:7px 10px; border-bottom:1px solid #e2e8f0; }
-          table.items tr:nth-child(even) td { background:#f8fafc; }
-          .totals { text-align:right; margin-top:8px; }
-          .totals table { margin-left:auto; font-size:13px; border-collapse:collapse; }
-          .totals td { padding:4px 12px; }
-          .totals .grand td { font-weight:900; font-size:16px; color:#1e3a5f; border-top:2px solid #1e3a5f; padding-top:8px; }
-          .notes { margin-top:28px; font-size:12px; color:#475569; white-space:pre-wrap; border-top:1px solid #e2e8f0; padding-top:16px; }
+          body { font-family:'Hiragino Kaku Gothic ProN','Noto Sans JP',sans-serif; font-size:12px; color:#1a1a1a; padding:28px 36px; }
+          .header { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:2px; }
+          .doc-title { font-size:26px; font-weight:900; }
+          .doc-logo  { font-size:20px; font-weight:900; color:#1e3a5f; font-style:italic; letter-spacing:.05em; }
+          .title-line { border-bottom:2px solid #cc2200; margin-bottom:18px; }
+          .parties { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+          .to-name { font-size:16px; font-weight:700; margin-bottom:2px; }
+          .from-block { display:flex; gap:10px; align-items:flex-start; }
+          .from-info { text-align:right; font-size:11px; line-height:1.9; }
+          .from-name { font-size:13px; font-weight:700; }
+          .inv-date { text-align:right; font-size:12px; margin-bottom:10px; }
+          .amount-box { border:1px solid #999; border-collapse:collapse; width:100%; margin-bottom:10px; }
+          .amount-box td { border:1px solid #999; padding:7px 12px; vertical-align:middle; }
+          .lbl { background:#555; color:#fff; font-size:11px; font-weight:700; text-align:center; width:86px; line-height:1.5; }
+          .amount-val { font-size:20px; font-weight:900; }
+          .bank-val { font-size:12px; line-height:1.9; }
+          .notice { font-size:10px; color:#555; line-height:1.8; margin-bottom:14px; }
+          .detail-title { font-size:13px; font-weight:700; margin-bottom:4px; }
+          table.detail { width:100%; border-collapse:collapse; font-size:12px; margin-bottom:2px; }
+          table.detail th { background:#555; color:#fff; padding:5px 8px; border:1px solid #999; text-align:left; }
+          table.detail td { padding:5px 8px; border:1px solid #ddd; }
+          table.detail tr:nth-child(even) td { background:#f4f4f4; }
+          .totals-wrap { display:flex; justify-content:flex-end; margin-bottom:16px; }
+          table.totals { border-collapse:collapse; font-size:12px; }
+          table.totals td { padding:4px 12px; border:1px solid #ddd; }
+          table.totals tr.grand td { font-weight:900; font-size:14px; background:#e8e8e8; }
+          .remarks-title { font-size:12px; font-weight:700; margin-bottom:4px; }
+          .remarks-box { border:1px solid #ccc; min-height:56px; padding:8px; font-size:11px; white-space:pre-wrap; }
+          @media print { body { padding:20px 28px; } }
         </style>
       </head><body>
         <div class="header">
+          <div class="doc-title">${typeLabel}</div>
+          <div class="doc-logo">Asnalo</div>
+        </div>
+        <div class="title-line"></div>
+
+        <div class="parties">
           <div>
-            <div class="doc-title">${typeLabel}</div>
-            ${inv.number ? `<div class="doc-number">${escHtml(inv.number)}</div>` : ''}
+            <div class="to-name">${escHtml(inv.customer_name||'')}　御中</div>
           </div>
-          <div class="from">
-            <div class="from-name">株式会社アスナロ</div>
-            <div>〒530-0001 大阪府大阪市北区梅田1丁目</div>
-            <div>TEL: 06-XXXX-XXXX</div>
-            <div>発行日: ${inv.issued_date||''}</div>
-            ${inv.due_date ? `<div>支払期限: ${inv.due_date}</div>` : ''}
+          <div class="from-block">
+            <div class="from-info">
+              <div class="from-name">株式会社アスナロ</div>
+              <div>〒541-0054</div>
+              <div>大阪府大阪市中央区南本町2-3-12 EDGE403</div>
+              <div>06-7878-6316</div>
+              ${inv.person_in_charge ? `<div>担当：${escHtml(inv.person_in_charge)}</div>` : ''}
+              <div>登録番号：T6120901040622</div>
+            </div>
+            <svg width="68" height="68" viewBox="0 0 68 68" style="flex-shrink:0;margin-top:2px;">
+              <circle cx="34" cy="34" r="32" fill="none" stroke="#cc2200" stroke-width="2.5"/>
+              <circle cx="34" cy="34" r="26" fill="none" stroke="#cc2200" stroke-width="1"/>
+              <text x="34" y="20" text-anchor="middle" fill="#cc2200" font-size="8" font-family="serif" font-weight="bold">株式会社</text>
+              <text x="34" y="37" text-anchor="middle" fill="#cc2200" font-size="12" font-family="serif" font-weight="bold">アスナロ</text>
+              <text x="34" y="52" text-anchor="middle" fill="#cc2200" font-size="8" font-family="serif" font-weight="bold">之　印</text>
+            </svg>
           </div>
         </div>
-        <div class="to">
-          <div class="to-name">${escHtml(inv.customer_name||'')} 御中</div>
-          <div style="font-size:13px;color:#475569;">下記の通りご請求申し上げます。</div>
-          <div class="amount-large">合計金額: ¥${fmt(inv.total)}</div>
+
+        <div class="inv-date">請求日：${fmtDate(inv.issued_date)}</div>
+
+        <table class="amount-box">
+          <tr>
+            <td class="lbl">ご請求金額<br>（消費税込）</td>
+            <td class="amount-val">¥${fmt(inv.total)}-</td>
+            <td class="lbl">振込先口座</td>
+            <td class="bank-val">
+              りそな銀行　新大阪駅前支店<br>
+              普通　0462670<br>
+              カ）アスナロ
+            </td>
+          </tr>
+          <tr>
+            <td class="lbl">お支払い期限</td>
+            <td colspan="3" style="font-size:13px;font-weight:700;">${fmtDate(inv.due_date)}</td>
+          </tr>
+        </table>
+
+        <div class="notice">
+          ※請求明細をご確認のうえ、お振込期日までに上記口座へお振込みをお願いいたします。<br>
+          ※お振込手数料はお客様にてご負担をお願いいたします。
         </div>
-        <table class="items">
+
+        <div class="detail-title">請求明細</div>
+        <table class="detail">
           <thead><tr>
-            <th style="width:40%;">品名・内容</th>
-            <th style="width:10%;text-align:center;">数量</th>
-            <th style="width:8%;text-align:center;">単位</th>
-            <th style="width:20%;text-align:right;">単価</th>
-            <th style="width:22%;text-align:right;">金額</th>
+            <th style="width:5%;text-align:center;">NO.</th>
+            <th style="width:28%;">商品名</th>
+            <th style="width:22%;">詳細</th>
+            <th style="width:16%;text-align:right;">単価</th>
+            <th style="width:8%;text-align:center;">数量</th>
+            <th style="width:18%;text-align:right;">金額</th>
           </tr></thead>
           <tbody>${itemRows}</tbody>
         </table>
-        <div class="totals">
-          <table>
-            <tr><td>小計</td><td style="text-align:right;">¥${fmt(inv.subtotal)}</td></tr>
-            <tr><td>消費税 (${inv.tax_rate||10}%)</td><td style="text-align:right;">¥${fmt(inv.tax_amount)}</td></tr>
-            <tr class="grand"><td>合計</td><td style="text-align:right;">¥${fmt(inv.total)}</td></tr>
+
+        <div class="totals-wrap">
+          <table class="totals">
+            <tr><td>小計</td><td style="text-align:right;min-width:100px;">${fmt(inv.subtotal)}</td></tr>
+            <tr><td>消費税（${inv.tax_rate||10}%対象）</td><td style="text-align:right;">${fmt(inv.tax_amount)}</td></tr>
+            <tr class="grand"><td>合計</td><td style="text-align:right;">${fmt(inv.total)}</td></tr>
           </table>
         </div>
-        ${inv.notes ? `<div class="notes"><strong>備考</strong>\n${escHtml(inv.notes)}</div>` : ''}
+
+        <div class="remarks-title">備考</div>
+        <div class="remarks-box">${inv.notes ? escHtml(inv.notes) : ''}</div>
+
         <script>window.onload = function(){ window.print(); }<\/script>
       </body></html>`;
 
