@@ -220,6 +220,18 @@
     </div>
   </main>
 
+<!-- 請求書化確認モーダル -->
+<div id="convertModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:600;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:12px;padding:28px;width:380px;max-width:95vw;box-shadow:0 16px 48px rgba(0,0,0,.18);">
+    <div style="font-size:15px;font-weight:800;color:var(--primary);margin-bottom:10px;">請求書に変換しますか？</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-bottom:24px;">見積書の内容をコピーして請求書（下書き）を新規作成します。元の見積書は残ります。</div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;">
+      <button class="btn btn-ghost" onclick="document.getElementById('convertModal').style.display='none'">キャンセル</button>
+      <button class="btn btn-primary" id="convertConfirmBtn">請求書を作成</button>
+    </div>
+  </div>
+</div>
+
 <!-- 印刷エリア：body直下に置くことで印刷時に確実に表示 -->
 <div class="print-area" id="printArea"></div>
 
@@ -456,10 +468,21 @@
     }
 
     // ===== 見積→請求書変換 =====
-    async function convertToInvoice(id) {
-      if (!confirm('この見積書を請求書に変換しますか？')) return;
+    let convertTargetId = null;
+
+    function convertToInvoice(id) {
+      convertTargetId = id;
+      document.getElementById('convertModal').style.display = 'flex';
+    }
+
+    document.getElementById('convertConfirmBtn').addEventListener('click', async () => {
+      const id = convertTargetId;
+      document.getElementById('convertModal').style.display = 'none';
+      if (!id) return;
+
       const inv = allInvoices.find(x => x.id === id);
-      if (!inv) return;
+      if (!inv) { Toast.error('見積書が見つかりません'); return; }
+
       try {
         await API.invoices.create({
           type:          'invoice',
@@ -482,7 +505,7 @@
         console.error(e);
         Toast.error('変換エラー: ' + e.message);
       }
-    }
+    });
 
     // ===== 印刷 =====
     function printInvoice() {
