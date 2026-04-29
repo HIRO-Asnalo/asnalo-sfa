@@ -376,7 +376,8 @@
 
     // ===== 削除 =====
     document.getElementById('deleteBtn').addEventListener('click', async () => {
-      if (!confirm('この案件を削除しますか？この操作は取り消せません。')) return;
+      const ok = await showConfirm('この案件を削除しますか？<br><span style="font-size:12px;color:#ef4444;">この操作は取り消せません。</span>', '削除する', 'btn-danger');
+      if (!ok) return;
       Loading.show();
       try {
         await API.deals.delete(dealId);
@@ -464,7 +465,7 @@
     }
 
     async function deleteTask(id) {
-      if (!confirm('このタスクを削除しますか？')) return;
+      if (!await showConfirm('このタスクを削除しますか？', '削除する', 'btn-danger')) return;
       try {
         await API.activities.delete(id);
         loadActivities();
@@ -635,7 +636,7 @@
     }
 
     async function deleteDealFile(id) {
-      if (!confirm('削除しますか？')) return;
+      if (!await showConfirm('このファイルを削除しますか？', '削除する', 'btn-danger')) return;
       try { await API.documents.delete(id); loadDealFiles(); Toast.success('削除しました'); }
       catch(e) { Toast.error('エラー: ' + e.message); }
     }

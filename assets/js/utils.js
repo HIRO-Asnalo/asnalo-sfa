@@ -89,9 +89,25 @@ function getParam(key) {
   return new URLSearchParams(location.search).get(key);
 }
 
-// ===== 確認ダイアログ =====
-function confirm(message) {
-  return window.confirm(message);
+// ===== 確認ダイアログ（カスタムモーダル） =====
+function showConfirm(message, okLabel = '実行', okClass = 'btn-primary') {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:10px;padding:28px;width:420px;max-width:92vw;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+        <p style="font-size:14px;font-weight:600;color:#1e293b;margin:0 0 24px;line-height:1.6;">${message}</p>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+          <button id="_cfmCancel" class="btn btn-ghost">キャンセル</button>
+          <button id="_cfmOk" class="btn ${okClass}">${okLabel}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    const cleanup = (result) => { document.body.removeChild(overlay); resolve(result); };
+    overlay.querySelector('#_cfmOk').onclick     = () => cleanup(true);
+    overlay.querySelector('#_cfmCancel').onclick = () => cleanup(false);
+    overlay.onclick = (e) => { if (e.target === overlay) cleanup(false); };
+  });
 }
 
 // ===== サイドバー アクティブ設定 =====
