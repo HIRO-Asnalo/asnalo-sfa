@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ダッシュボード | アスナロ SFA</title>
+  <title>ダッシュボード | Asnalo All in one</title>
   <link rel="stylesheet" href="/assets/css/main.css">
   <script>
     // 招待/パスワードリセットトークンを他スクリプトより先に処理
@@ -174,6 +174,36 @@
 
     /* 空状態 */
     .empty { text-align: center; padding: 20px; font-size: 12px; color: var(--text-muted); }
+
+    /* クリック可能なKPIカード */
+    .kpi-card.clickable { cursor: pointer; transition: box-shadow .15s, transform .12s; }
+    .kpi-card.clickable:hover { box-shadow: 0 6px 16px rgba(0,0,0,.12); transform: translateY(-2px); }
+
+    /* クリック可能なパイプライン行・担当者行 */
+    .pl-row.clickable  { cursor: pointer; border-radius: 6px; padding: 8px 6px; margin: 0 -6px; transition: background .12s; }
+    .pl-row.clickable:hover  { background: #f1f5f9; }
+    .member-row.clickable { cursor: pointer; border-radius: 6px; padding: 8px 6px; margin: 0 -6px; transition: background .12s; }
+    .member-row.clickable:hover { background: #f1f5f9; }
+
+    /* 詳細モーダル */
+    .dm-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 300;
+      display: flex; align-items: flex-start; justify-content: center;
+      padding-top: 60px; padding-bottom: 40px;
+    }
+    .dm-inner {
+      background: #fff; border-radius: 12px; width: 700px; max-width: 95vw;
+      max-height: 80vh; display: flex; flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0,0,0,.22);
+    }
+    .dm-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 22px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+    }
+    .dm-title  { font-size: 15px; font-weight: 700; color: var(--primary); }
+    .dm-close  { border: none; background: none; cursor: pointer; font-size: 22px; color: var(--text-muted); padding: 2px 6px; line-height: 1; border-radius: 4px; }
+    .dm-close:hover { background: #f1f5f9; }
+    .dm-body   { flex: 1; overflow-y: auto; padding: 18px 22px; }
   </style>
 </head>
 <body class="app-layout">
@@ -181,7 +211,7 @@
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-logo">
-      <div class="logo-text">ASNALO SFA</div>
+      <div class="logo-text">Asnalo All in one</div>
       <div class="logo-sub">営業管理システム</div>
     </div>
     <nav class="sidebar-nav">
@@ -193,6 +223,7 @@
         <svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
         案件管理
       </a>
+      <a href="/recycle-leads/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>リサイクルリード</a>
       <a href="/customers/index.html" class="nav-item">
         <svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         顧客管理
@@ -236,32 +267,32 @@
 
     <!-- KPI カード -->
     <div class="kpi-row">
-      <div class="kpi-card">
+      <div class="kpi-card clickable" onclick="showKpiDetail('active')" title="クリックで稼働案件一覧">
         <div class="kpi-label">稼働案件数</div>
         <div class="kpi-val" id="kpi-active">0<span class="kpi-unit">件</span></div>
         <div class="kpi-sub">受注・失注除く</div>
       </div>
-      <div class="kpi-card blue">
+      <div class="kpi-card blue clickable" onclick="location.href='/customers/index.html'" title="顧客一覧へ">
         <div class="kpi-label">総顧客数</div>
         <div class="kpi-val" id="kpi-customers">0<span class="kpi-unit">社</span></div>
         <div class="kpi-sub">登録済み</div>
       </div>
-      <div class="kpi-card green">
+      <div class="kpi-card green clickable" onclick="showKpiDetail('winrate')" title="クリックで受注率詳細">
         <div class="kpi-label">受注率（累計）</div>
         <div class="kpi-val" id="kpi-winrate">0<span class="kpi-unit">%</span></div>
         <div class="kpi-sub">受注 ÷ クローズ</div>
       </div>
-      <div class="kpi-card purple">
+      <div class="kpi-card purple clickable" onclick="showKpiDetail('closing')" title="クリックで今月受注予定一覧">
         <div class="kpi-label">今月 受注予定</div>
         <div class="kpi-val" id="kpi-closing">0<span class="kpi-unit">件</span></div>
         <div class="kpi-sub">クロージング含む</div>
       </div>
-      <div class="kpi-card red">
+      <div class="kpi-card red clickable" onclick="showKpiDetail('activities')" title="クリックで今週の活動一覧">
         <div class="kpi-label">今週の活動数</div>
         <div class="kpi-val" id="kpi-activities">0<span class="kpi-unit">件</span></div>
         <div class="kpi-sub">コンタクト数</div>
       </div>
-      <div class="kpi-card" style="border-color:#8b5cf6;grid-column:span 2;" id="kpi-pipeline-card" hidden>
+      <div class="kpi-card clickable" style="border-color:#8b5cf6;grid-column:span 2;" id="kpi-pipeline-card" hidden onclick="showKpiDetail('pipeline')" title="クリックでパイプライン詳細">
         <div class="kpi-label">パイプライン合計（稼働案件）</div>
         <div class="kpi-val" id="kpi-pipeline">—</div>
         <div class="kpi-sub" id="kpi-pipeline-sub"></div>
@@ -356,10 +387,13 @@
     const PHASES = ['認知商談','ヒアリング','提案','クロージング','受注','失注'];
     const COLORS = { '認知商談':'#94a3b8','ヒアリング':'#0ea5e9','提案':'#f59e0b','クロージング':'#F59E12','受注':'#22c55e','失注':'#ef4444' };
     let chart;
+    let dashData  = null;
+    let allDeals  = null;
 
     initPage(async () => {
       try {
         const d = await API.dashboard.stats();
+        dashData = d;
         // KPI
         document.getElementById('kpi-active').innerHTML      = `${d.summary.active_deals}<span class="kpi-unit">件</span>`;
         document.getElementById('kpi-customers').innerHTML   = `${d.summary.total_customers}<span class="kpi-unit">社</span>`;
@@ -418,7 +452,7 @@
       const total = Object.values(pc).reduce((a,b)=>a+b,0)||1;
       document.getElementById('pipelineList').innerHTML = PHASES.map(p => {
         const n = pc[p]||0, pct = Math.round(n/total*100), c = COLORS[p];
-        return `<div class="pl-row">
+        return `<div class="pl-row clickable" onclick="showPhaseDeals('${p}')" title="${p}フェーズの案件一覧">
           <div class="pl-label" style="color:${c}">${p}</div>
           <div class="pl-bar-bg"><div class="pl-bar" style="width:${pct}%;background:${c};"></div></div>
           <div class="pl-count">${n}</div>
@@ -448,7 +482,7 @@
       const map={};
       deals.forEach(d=>{ const u=d.assigned_user||'未設定'; if(!map[u])map[u]=0; if(!['受注','失注'].includes(d.phase))map[u]++; });
       document.getElementById('memberList').innerHTML = Object.entries(map).slice(0,6).map(([n,c])=>`
-        <div class="member-row">
+        <div class="member-row clickable" onclick="showMemberDeals('${n.replace(/'/g,"\\'")}')" title="${n}の稼働案件一覧">
           <div class="member-av">${n.slice(0,1)}</div>
           <div class="member-name">${n}</div>
           <div class="member-badge">${c}件</div>
@@ -592,6 +626,179 @@
         </div>`;
     }
 
+    // ===== 詳細モーダル共通 =====
+    function openDetailModal(title, html) {
+      document.getElementById('detailModalTitle').textContent = title;
+      document.getElementById('detailModalBody').innerHTML = html;
+      document.getElementById('detailModal').style.display = 'flex';
+    }
+    function closeDetailModal() {
+      document.getElementById('detailModal').style.display = 'none';
+    }
+
+    async function fetchAllDeals() {
+      if (!allDeals) allDeals = await API.deals.list();
+      return allDeals;
+    }
+
+    async function showKpiDetail(type) {
+      Loading.show();
+      try {
+        const deals = await fetchAllDeals();
+        const now = new Date();
+
+        if (type === 'active') {
+          const active = deals.filter(d => !['受注','失注'].includes(d.phase));
+          openDetailModal(`稼働案件一覧（${active.length}件）`, renderDealTable(active));
+
+        } else if (type === 'winrate') {
+          const won  = deals.filter(d => d.phase === '受注');
+          const lost = deals.filter(d => d.phase === '失注');
+          const rate = (won.length + lost.length) > 0
+            ? Math.round(won.length / (won.length + lost.length) * 100) : 0;
+          openDetailModal('受注率 詳細', renderWinRateDetail(won, lost, rate));
+
+        } else if (type === 'closing') {
+          const ym = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+          const closing = deals.filter(d =>
+            d.phase === 'クロージング' ||
+            (d.phase === '受注' && (d.updated_at||'').startsWith(ym))
+          );
+          openDetailModal(`今月 受注予定案件（${closing.length}件）`, renderDealTable(closing));
+
+        } else if (type === 'activities') {
+          const acts = dashData?.recent_activities || [];
+          openDetailModal(`今週の活動（${acts.length}件）`, renderActivitiesDetail(acts));
+
+        } else if (type === 'pipeline') {
+          const active = deals.filter(d => !['受注','失注'].includes(d.phase));
+          openDetailModal(`パイプライン案件一覧（${active.length}件）`, renderDealTableWithAmount(active));
+        }
+      } catch(e) {
+        Toast.error('詳細取得エラー: ' + e.message);
+      } finally {
+        Loading.hide();
+      }
+    }
+
+    async function showPhaseDeals(phase) {
+      Loading.show();
+      try {
+        const deals = await fetchAllDeals();
+        const filtered = deals.filter(d => d.phase === phase);
+        openDetailModal(`${phase}フェーズ 案件一覧（${filtered.length}件）`, renderDealTable(filtered));
+      } catch(e) {
+        Toast.error('詳細取得エラー: ' + e.message);
+      } finally {
+        Loading.hide();
+      }
+    }
+
+    async function showMemberDeals(member) {
+      Loading.show();
+      try {
+        const deals = await fetchAllDeals();
+        const filtered = deals.filter(d => (d.assigned_user||'未設定') === member && !['受注','失注'].includes(d.phase));
+        openDetailModal(`${member} 稼働案件（${filtered.length}件）`, renderDealTable(filtered));
+      } catch(e) {
+        Toast.error('詳細取得エラー: ' + e.message);
+      } finally {
+        Loading.hide();
+      }
+    }
+
+    function renderDealTable(deals) {
+      if (!deals.length) return '<div class="empty">案件なし</div>';
+      return `
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="background:#f8fafc;">
+              <th style="text-align:left;padding:8px 10px;font-weight:600;color:var(--text-muted);border-bottom:1px solid var(--border);">案件名</th>
+              <th style="text-align:left;padding:8px 10px;font-weight:600;color:var(--text-muted);border-bottom:1px solid var(--border);">フェーズ</th>
+              <th style="text-align:left;padding:8px 10px;font-weight:600;color:var(--text-muted);border-bottom:1px solid var(--border);">担当者</th>
+              <th style="text-align:right;padding:8px 10px;font-weight:600;color:var(--text-muted);border-bottom:1px solid var(--border);">更新日</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${deals.map(d => `
+              <tr style="cursor:pointer;border-bottom:1px solid #f1f5f9;"
+                onclick="location.href='/deals/detail.html?id=${d.id}'"
+                onmouseover="this.style.background='#f8fafc'"
+                onmouseout="this.style.background=''">
+                <td style="padding:9px 10px;font-weight:600;color:var(--primary);">${escHtml(d.deal_name||'（無題）')}</td>
+                <td style="padding:9px 10px;">${phaseBadge(d.phase)}</td>
+                <td style="padding:9px 10px;color:var(--text-muted);">${escHtml(d.assigned_user||'—')}</td>
+                <td style="padding:9px 10px;text-align:right;color:var(--text-muted);white-space:nowrap;">${fmtDate(d.updated_at)}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    function renderDealTableWithAmount(deals) {
+      if (!deals.length) return '<div class="empty">案件なし</div>';
+      return `
+        <table style="width:100%;border-collapse:collapse;font-size:13px;">
+          <thead>
+            <tr style="background:#f8fafc;">
+              <th style="text-align:left;padding:8px 10px;font-weight:600;color:var(--text-muted);border-bottom:1px solid var(--border);">案件名</th>
+              <th style="text-align:left;padding:8px 10px;font-weight:600;color:var(--text-muted);border-bottom:1px solid var(--border);">フェーズ</th>
+              <th style="text-align:right;padding:8px 10px;font-weight:600;color:var(--text-muted);border-bottom:1px solid var(--border);">金額</th>
+              <th style="text-align:left;padding:8px 10px;font-weight:600;color:var(--text-muted);border-bottom:1px solid var(--border);">担当者</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${deals.map(d => `
+              <tr style="cursor:pointer;border-bottom:1px solid #f1f5f9;"
+                onclick="location.href='/deals/detail.html?id=${d.id}'"
+                onmouseover="this.style.background='#f8fafc'"
+                onmouseout="this.style.background=''">
+                <td style="padding:9px 10px;font-weight:600;color:var(--primary);">${escHtml(d.deal_name||'（無題）')}</td>
+                <td style="padding:9px 10px;">${phaseBadge(d.phase)}</td>
+                <td style="padding:9px 10px;text-align:right;font-weight:600;">${d.amount ? '¥' + Number(d.amount).toLocaleString() : '—'}</td>
+                <td style="padding:9px 10px;color:var(--text-muted);">${escHtml(d.assigned_user||'—')}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>`;
+    }
+
+    function renderWinRateDetail(won, lost, rate) {
+      const wonAmt  = won.reduce((s,d) => s + (d.amount||0), 0);
+      const lostAmt = lost.reduce((s,d) => s + (d.amount||0), 0);
+      return `
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px;">
+          <div style="background:#f0fdf4;border-radius:8px;padding:16px;text-align:center;">
+            <div style="font-size:11px;color:#166534;font-weight:600;margin-bottom:6px;">受注件数</div>
+            <div style="font-size:28px;font-weight:800;color:#16a34a;">${won.length}<span style="font-size:14px;">件</span></div>
+            ${wonAmt > 0 ? `<div style="font-size:11px;color:#16a34a;margin-top:4px;">¥${wonAmt.toLocaleString()}</div>` : ''}
+          </div>
+          <div style="background:#fef2f2;border-radius:8px;padding:16px;text-align:center;">
+            <div style="font-size:11px;color:#991b1b;font-weight:600;margin-bottom:6px;">失注件数</div>
+            <div style="font-size:28px;font-weight:800;color:#ef4444;">${lost.length}<span style="font-size:14px;">件</span></div>
+            ${lostAmt > 0 ? `<div style="font-size:11px;color:#ef4444;margin-top:4px;">¥${lostAmt.toLocaleString()}</div>` : ''}
+          </div>
+          <div style="background:#eff6ff;border-radius:8px;padding:16px;text-align:center;">
+            <div style="font-size:11px;color:#1e40af;font-weight:600;margin-bottom:6px;">受注率</div>
+            <div style="font-size:28px;font-weight:800;color:#2563eb;">${rate}<span style="font-size:14px;">%</span></div>
+          </div>
+        </div>
+        <div style="font-size:13px;font-weight:600;margin-bottom:10px;color:var(--primary);">受注済み案件</div>
+        ${renderDealTable(won)}`;
+    }
+
+    function renderActivitiesDetail(acts) {
+      if (!acts.length) return '<div class="empty">活動なし</div>';
+      const dc = {'電話':'','訪問':'green','メール':'blue','商談':'purple','メモ':''};
+      const ic = {'電話':'📞','訪問':'🏢','メール':'📧','商談':'💼','メモ':'📝'};
+      return acts.map(a => `
+        <div class="act-row">
+          <div class="act-dot ${dc[a.type]||''}"></div>
+          <div style="flex:1;min-width:0;">
+            <div class="act-txt">${ic[a.type]||'📝'} ${escHtml(a.content||'')}</div>
+            <div class="act-meta">${escHtml(a.type||'')} · ${escHtml(a.user_name||'')} · ${fmtDate(a.activity_date)}</div>
+          </div>
+        </div>`).join('');
+    }
+
     function openGoalModal() {
       document.getElementById('goalModal').style.display = 'flex';
     }
@@ -623,6 +830,17 @@
       });
     });
   </script>
+
+  <!-- 詳細モーダル -->
+  <div id="detailModal" class="dm-overlay" style="display:none;" onclick="if(event.target===this)closeDetailModal()">
+    <div class="dm-inner">
+      <div class="dm-header">
+        <div class="dm-title" id="detailModalTitle"></div>
+        <button class="dm-close" onclick="closeDetailModal()">×</button>
+      </div>
+      <div class="dm-body" id="detailModalBody"></div>
+    </div>
+  </div>
 
   <!-- 目標設定モーダル -->
   <div id="goalModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:200;align-items:center;justify-content:center;">
