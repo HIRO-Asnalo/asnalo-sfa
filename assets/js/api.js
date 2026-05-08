@@ -176,5 +176,23 @@ const API = (() => {
     delete: (id)   => request('DELETE', `/invoices?id=${id}`),
   };
 
-  return { deals, customers, fields, activities, dashboard, ai, ma, goals, reports, contracts, announcements, wiki, documents, appointments, invoices };
+  // ===== Leads =====
+  const leads = {
+    list:   ()     => request('GET',    '/leads'),
+    get:    (id)   => request('GET',    `/leads?id=${id}`),
+    create: (data) => request('POST',   '/leads', data),
+    update: (data) => request('PUT',    '/leads', data),
+    delete: (id)   => request('DELETE', `/leads?id=${id}`),
+  };
+
+  // ===== Recycle Leads =====
+  const recycleLeads = {
+    list:   ()     => request('GET',    '/recycle-leads'),
+    get:    (id)   => request('GET',    `/recycle-leads?id=${id}`),
+    create: (data) => request('POST',   '/recycle-leads', data),
+    update: (data) => request('PUT',    '/recycle-leads', data),
+    delete: (id)   => request('DELETE', `/recycle-leads?id=${id}`),
+  };
+
+  return { deals, customers, fields, activities, dashboard, ai, ma, goals, reports, contracts, announcements, wiki, documents, appointments, invoices, leads, recycleLeads };
 })();

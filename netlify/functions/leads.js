@@ -1,14 +1,22 @@
 /**
- * リード受付 API（ウェブフォーム連携）
- * POST /api/leads → 認証不要。お問い合わせフォームから受信して案件を自動作成
+ * リード API
  *
- * 対応フィールド（フォームから送信）:
- *   company_name, contact_name, contact_email, contact_phone,
- *   inquiry, source（流入元: HP/LP/紹介等）
+ * 認証あり（SFA内部）:
+ *   GET    /api/leads        → leads テーブル一覧
+ *   GET    /api/leads?id=xxx → 1件取得
+ *   POST   /api/leads        → 新規作成
+ *   PUT    /api/leads        → 更新
+ *   DELETE /api/leads?id=xxx → 削除
+ *
+ * 認証なし（ウェブフォーム連携）:
+ *   POST /api/leads  → deals テーブルに自動作成（既存動作を維持）
  */
 
-const { insertRow, response } = require('./_db');
+const { getRows, getRow, insertRow, updateRow, deleteRow, response } = require('./_db');
+const { requireAuth } = require('./_auth');
 const { notifyDealCreated } = require('./_slack');
+
+const TABLE = 'leads';
 
 exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
@@ -16,16 +24,74 @@ exports.handler = async (event) => {
       statusCode: 204,
       headers: {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization',
       },
       body: '',
     };
   }
 
-  if (event.httpMethod !== 'POST') return response(405, { error: 'Method Not Allowed' });
+  // 認証トークンがあれば SFA 内部操作（CRUD）
+  const hasAuth = !!(event.headers?.authorization || event.headers?.Authorization);
 
-  // LEAD_SECRET によるシンプル認証（省略可）
+  if (hasAuth) {
+    const auth = requireAuth(event);
+    if (auth.error) return auth;
+
+    try {
+      switch (event.httpMethod) {
+        case 'GET': {
+          const id = event.queryStringParameters?.id;
+          if (id) {
+            const row = await getRow(TABLE, id);
+            if (!row) return response(404, { error: 'リードが見つかりません' });
+            return response(200, row);
+          }
+          return response(200, await getRows(TABLE));
+        }
+
+        case 'POST': {
+          const body = JSON.parse(event.body || '{}');
+          if (!body.company_name) return response(400, { error: '企業名は必須です' });
+          const { force, ...insertData } = body;
+          const now = new Date().toISOString();
+          const result = await insertRow(TABLE, { ...insertData, created_at: now, updated_at: now });
+          return response(201, result);
+        }
+
+        case 'PUT': {
+          const body = JSON.parse(event.body || '{}');
+          if (!body.id) return response(400, { error: 'id が必要です' });
+          const { id, ...rest } = body;
+          await updateRow(TABLE, id, { ...rest, updated_at: new Date().toISOString() });
+          return response(200, { success: true });
+        }
+
+        case 'DELETE': {
+          const id = event.queryStringParameters?.id;
+          if (!id) return response(400, { error: 'id が必要です' });
+          await deleteRow(TABLE, id);
+          return response(200, { success: true });
+        }
+
+        default:
+          return response(405, { error: 'Method Not Allowed' });
+      }
+    } catch (err) {
+      console.error('leads error:', err);
+      return response(500, { error: err.message });
+    }
+  }
+
+  // 認証なし → ウェブフォーム受付（既存動作）
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405,
+      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
+    };
+  }
+
   const leadSecret = process.env.LEAD_SECRET;
   if (leadSecret) {
     const sent = event.headers?.['x-lead-secret'] || event.queryStringParameters?.secret;
@@ -45,25 +111,22 @@ exports.handler = async (event) => {
     }
 
     const now = new Date().toISOString();
-
-    // 案件を自動作成
     const deal = await insertRow('deals', {
       deal_name:    `【新規リード】${company_name || contact_name || 'Unknown'}`,
       company_name: company_name || '',
       phase:        '認知商談',
-      memo:         [
-        inquiry    ? `【お問い合わせ内容】\n${inquiry}` : '',
-        source     ? `【流入元】${source}` : '',
+      memo: [
+        inquiry       ? `【お問い合わせ内容】\n${inquiry}` : '',
+        source        ? `【流入元】${source}` : '',
         contact_name  ? `【担当者名】${contact_name}` : '',
         contact_email ? `【メール】${contact_email}` : '',
         contact_phone ? `【電話】${contact_phone}` : '',
       ].filter(Boolean).join('\n\n'),
-      channel:      source || 'HP',
-      created_at:   now,
-      updated_at:   now,
+      channel:    source || 'HP',
+      created_at: now,
+      updated_at: now,
     });
 
-    // Slack通知
     notifyDealCreated(deal, 'ウェブフォーム').catch(() => {});
 
     return {
@@ -72,7 +135,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({ success: true, deal_id: deal.id }),
     };
   } catch (err) {
-    console.error('leads error:', err);
+    console.error('leads (form) error:', err);
     return {
       statusCode: 500,
       headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
