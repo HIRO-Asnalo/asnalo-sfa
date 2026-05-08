@@ -89,12 +89,8 @@
     };
 
     initPage(async () => {
-      try {
-        allLeads = await API.leads.list();
-        renderLeads();
-      } catch(e) {
-        Toast.error('データ取得エラー: ' + e.message);
-      }
+      allLeads = [];
+      renderLeads();
     });
 
     document.getElementById('searchInput').addEventListener('input', renderLeads);

@@ -86,12 +86,8 @@
     };
 
     initPage(async () => {
-      try {
-        allRecycleLeads = await API.recycleLeads.list();
-        renderRecycleLeads();
-      } catch(e) {
-        Toast.error('データ取得エラー: ' + e.message);
-      }
+      allRecycleLeads = [];
+      renderRecycleLeads();
     });
 
     document.getElementById('searchInput').addEventListener('input', renderRecycleLeads);
