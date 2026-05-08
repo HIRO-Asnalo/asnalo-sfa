@@ -3,46 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>社内Wiki | アスナロ SFA</title>
+  <title>リード | アスナロ SFA</title>
   <link rel="stylesheet" href="/assets/css/main.css">
   <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-  <style>
-    .wiki-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 14px;
-    }
-    .wiki-card {
-      background: #fff;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 18px;
-      cursor: pointer;
-      text-decoration: none;
-      color: inherit;
-      display: block;
-      transition: box-shadow .15s, border-color .15s;
-    }
-    .wiki-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.1); border-color: var(--accent); }
-    .wiki-cat {
-      font-size: 11px; font-weight: 700;
-      color: var(--accent);
-      letter-spacing: .04em;
-      margin-bottom: 8px;
-    }
-    .wiki-title { font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 6px; line-height: 1.4; }
-    .wiki-preview { font-size: 12px; color: var(--text-muted); line-height: 1.6; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-    .wiki-meta { font-size: 11px; color: var(--text-muted); margin-top: 10px; }
-    .cat-filter {
-      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px;
-    }
-    .cat-btn {
-      padding: 4px 12px; border-radius: 16px;
-      border: 1px solid var(--border); background: #fff;
-      font-size: 12px; font-weight: 600; cursor: pointer; color: var(--text-muted);
-    }
-    .cat-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-  </style>
 </head>
 <body class="app-layout">
 
@@ -50,7 +13,7 @@
     <div class="sidebar-logo"><div class="logo-text">ASNALO SFA</div><div class="logo-sub">営業管理システム</div></div>
     <nav class="sidebar-nav">
       <a href="/" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>ダッシュボード</a>
-      <a href="/leads/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>リード</a>
+      <a href="/leads/index.html" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>リード</a>
       <a href="/deals/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>案件管理</a>
       <a href="/customers/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>顧客管理</a>
       <a href="/calendar/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>商談カレンダー</a>
@@ -59,7 +22,7 @@
       <a href="/tasks/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><polyline points="9 11 12 14 22 4"/><line x1="3" y1="10" x2="9" y2="10"/></svg>全社タスク</a>
       <a href="/tasks/deals.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="9 12 11 14 15 10"/></svg>案件タスク</a>
       <a href="/announcements/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>お知らせ</a>
-      <a href="/wiki/index.html" class="nav-item active"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>社内Wiki</a>
+      <a href="/wiki/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>社内Wiki</a>
       <a href="/documents/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>ドキュメント</a>
       <a href="/prospects/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" stroke-width="2" fill="none" stroke="currentColor"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><path d="M11 8v6M8 11h6"/></svg>新規開拓リサーチ</a>
       <a href="/recycle-leads/index.html" class="nav-item"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><polyline points="23 20 23 14 17 14"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>リサイクルリード</a>
@@ -73,20 +36,42 @@
   <main class="main-content">
     <div class="page-header">
       <div>
-        <h1 class="page-title">社内Wiki</h1>
-        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">業務マニュアル・FAQ・ナレッジ</div>
+        <h1 class="page-title">リード</h1>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">営業データベースからのリード管理</div>
       </div>
       <div class="page-actions">
-        <input type="text" class="search-input" id="searchInput" placeholder="Wikiを検索" style="width:200px;" oninput="render()">
-        <a href="/wiki/page.html?new=1" class="btn btn-primary">+ 新規ページ</a>
+        <input type="text" class="search-input" id="searchInput" placeholder="企業名で検索">
+        <select class="form-select" id="statusFilter" style="width:150px;">
+          <option value="">ステータス: すべて</option>
+          <option>未対応</option>
+          <option>アプローチ中</option>
+          <option>返信待ち</option>
+          <option>商談化</option>
+          <option>見送り</option>
+        </select>
       </div>
     </div>
 
     <div class="page-body">
-      <!-- カテゴリフィルター -->
-      <div class="cat-filter" id="catFilter"></div>
-      <!-- グリッド -->
-      <div id="wikiGrid"><div style="text-align:center;padding:40px;color:var(--text-muted);">読み込み中...</div></div>
+      <div class="card">
+        <div class="table-wrap">
+          <table id="leadTable">
+            <thead>
+              <tr>
+                <th>企業名</th>
+                <th>業種</th>
+                <th>従業員数</th>
+                <th>担当者</th>
+                <th>ステータス</th>
+                <th>スコア</th>
+                <th>登録日</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="leadBody"></tbody>
+          </table>
+        </div>
+      </div>
     </div>
   </main>
 
@@ -94,55 +79,76 @@
   <script src="/assets/js/api.js"></script>
   <script src="/assets/js/utils.js"></script>
   <script>
-    let pages = [];
-    let currentCat = 'すべて';
+    let allLeads = [];
 
-    const CATEGORIES = ['すべて','業務フロー','FAQ','サービス説明','採用','営業','その他'];
+    const STATUS_COLOR = {
+      '未対応':     'badge-gray',
+      'アプローチ中': 'badge-blue',
+      '返信待ち':   'badge-yellow',
+      '商談化':     'badge-green',
+      '見送り':     'badge-gray',
+    };
 
     initPage(async () => {
       try {
-        pages = await API.wiki.list();
-        buildCatFilter();
-        render();
-      } catch(e) { Toast.error('読み込みエラー: ' + e.message); }
+        allLeads = await API.leads.list();
+        renderLeads();
+      } catch(e) {
+        Toast.error('データ取得エラー: ' + e.message);
+      }
     });
 
-    function buildCatFilter() {
-      const cats = ['すべて', ...new Set(pages.map(p => p.category).filter(Boolean))];
-      document.getElementById('catFilter').innerHTML = cats.map(c =>
-        `<button class="cat-btn ${c === currentCat ? 'active' : ''}" onclick="setCat('${c}',this)">${c}</button>`
-      ).join('');
-    }
+    document.getElementById('searchInput').addEventListener('input', renderLeads);
+    document.getElementById('statusFilter').addEventListener('change', renderLeads);
 
-    function setCat(cat, btn) {
-      currentCat = cat;
-      document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      render();
-    }
+    function renderLeads() {
+      const q      = document.getElementById('searchInput').value.toLowerCase();
+      const status = document.getElementById('statusFilter').value;
 
-    function render() {
-      const q = (document.getElementById('searchInput').value || '').toLowerCase();
-      const filtered = pages.filter(p => {
-        if (currentCat !== 'すべて' && p.category !== currentCat) return false;
-        if (q && !p.title?.toLowerCase().includes(q) && !p.content?.toLowerCase().includes(q)) return false;
+      const list = allLeads.filter(l => {
+        if (q && !l.company_name?.toLowerCase().includes(q)) return false;
+        if (status && l.status !== status) return false;
         return true;
       });
-      if (!filtered.length) {
-        document.getElementById('wikiGrid').innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-muted);">ページがありません</div>';
+
+      const body = document.getElementById('leadBody');
+      if (!list.length) {
+        body.innerHTML = `<tr><td colspan="8"><div class="empty-state"><div class="empty-state-text">リードがありません</div></div></td></tr>`;
         return;
       }
-      document.getElementById('wikiGrid').innerHTML = `<div class="wiki-grid">${filtered.map(p => `
-        <a href="/wiki/page.html?id=${p.id}" class="wiki-card">
-          <div class="wiki-cat">${p.category || 'その他'}</div>
-          <div class="wiki-title">${escHtml(p.title)}</div>
-          ${p.content ? `<div class="wiki-preview">${escHtml(p.content.replace(/\n/g,' '))}</div>` : ''}
-          <div class="wiki-meta">更新: ${fmtDate(p.updated_at)} ・ ${p.author || '—'}</div>
-        </a>`).join('')}
-      </div>`;
+
+      body.innerHTML = list.map(l => `
+        <tr>
+          <td style="font-weight:600;">${l.company_name || '—'}</td>
+          <td>${l.industry || '—'}</td>
+          <td>${l.employee_count || '—'}</td>
+          <td>${l.contact_name || '—'}</td>
+          <td>${l.status ? `<span class="badge ${STATUS_COLOR[l.status] || 'badge-gray'}">${l.status}</span>` : '—'}</td>
+          <td>${l.score != null ? l.score + '点' : '—'}</td>
+          <td>${fmtDate(l.created_at)}</td>
+          <td>
+            <button class="btn btn-primary btn-sm" onclick="convertToDeal('${l.id}','${(l.company_name||'').replace(/'/g,"\\'")}')">商談化</button>
+          </td>
+        </tr>`).join('');
     }
 
-    function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    async function convertToDeal(id, companyName) {
+      if (!confirm(`「${companyName}」を案件に昇格しますか？`)) return;
+      try {
+        await API.deals.create({
+          deal_name:    companyName,
+          company_name: companyName,
+          phase:        '認知商談',
+          lead_id:      id,
+        });
+        await API.leads.update({ id, status: '商談化' });
+        allLeads = allLeads.map(l => l.id === id ? { ...l, status: '商談化' } : l);
+        renderLeads();
+        Toast.success('案件を作成しました');
+      } catch(e) {
+        Toast.error('エラー: ' + e.message);
+      }
+    }
   </script>
 </body>
 </html>

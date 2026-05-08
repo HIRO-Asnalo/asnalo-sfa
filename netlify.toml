@@ -47,6 +47,16 @@
   to = "/documents/index.html"
   status = 200
 
+[[redirects]]
+  from = "/leads"
+  to = "/leads/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/recycle-leads"
+  to = "/recycle-leads/index.html"
+  status = 200
+
 [[headers]]
   for = "/*"
   [headers.values]
