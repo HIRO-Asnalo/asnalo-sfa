@@ -138,7 +138,7 @@
           deal_name:    companyName,
           company_name: companyName,
           phase:        '認知商談',
-          lead_id:      id,
+          memo:         `[リードID: ${id}]`,
         });
         await API.leads.update({ id, status: '商談化' });
         allLeads = allLeads.map(l => l.id === id ? { ...l, status: '商談化' } : l);

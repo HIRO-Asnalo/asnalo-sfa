@@ -134,7 +134,7 @@
           deal_name:    companyName + '（再商談）',
           company_name: companyName,
           phase:        '認知商談',
-          recycle_lead_id: id,
+          memo:         `[リサイクルリードID: ${id}]`,
         });
         await API.recycleLeads.update({ id, recycle_status: '再商談化' });
         allRecycleLeads = allRecycleLeads.map(l => l.id === id ? { ...l, recycle_status: '再商談化' } : l);
