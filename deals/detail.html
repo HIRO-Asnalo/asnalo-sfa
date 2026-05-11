@@ -332,12 +332,12 @@
           Toast.success('保存しました');
           document.getElementById('phaseBadgeHeader').innerHTML = phaseBadge(data.phase);
           updateCloseButtons(data.phase);
-          // フェーズが受注・失注に変わった瞬間に自動でクローズ案内を表示
-          if (prevPhase !== data.phase) {
+          // フェーズが受注・失注に変わった瞬間に自動処理（未アーカイブの場合のみ）
+          if (prevPhase !== data.phase && !deal.archived) {
             if (data.phase === '受注') {
-              setTimeout(() => showClosePrompt('won'), 600);
+              setTimeout(() => autoPromoteCustomer(data.company_name), 400);
             } else if (data.phase === '失注') {
-              setTimeout(() => showClosePrompt('lost'), 600);
+              setTimeout(() => autoRecycleLead(data.company_name), 400);
             }
           }
         }
@@ -656,28 +656,90 @@
       catch(e) { Toast.error('エラー: ' + e.message); }
     }
 
-    // ===== フェーズ変更時の自動クローズ案内バナー =====
-    function showClosePrompt(type) {
-      const existing = document.getElementById('closePromptBanner');
+    // ===== 受注 → 顧客自動登録 =====
+    async function autoPromoteCustomer(companyName) {
+      Loading.show();
+      try {
+        let newCustomer;
+        try {
+          newCustomer = await API.customers.create({
+            company_name:      companyName,
+            contact_name:      deal?.contact_person || '',
+            cs_status:         'オンボーディング中',
+            onboarding_status: '未開始',
+            ma_subscribed:     'false',
+          });
+        } catch(e) {
+          if (e.status === 409 && e.data?.duplicate) {
+            // 既存顧客にリンク
+            const existingId = e.data.existing_id;
+            await API.deals.update({ id: dealId, customer_id: existingId, archived: true });
+            Loading.hide();
+            showResultBanner('won', existingId, true);
+            return;
+          }
+          throw e;
+        }
+        await API.deals.update({ id: dealId, customer_id: newCustomer.id, archived: true });
+        deal.archived = true;
+        updateCloseButtons(''); // ボタン非表示
+        Loading.hide();
+        showResultBanner('won', newCustomer.id, false);
+      } catch(e) {
+        Loading.hide();
+        Toast.error('顧客登録エラー: ' + e.message);
+      }
+    }
+
+    // ===== 失注 → リサイクルリード自動登録 =====
+    async function autoRecycleLead(companyName) {
+      Loading.show();
+      try {
+        const today = new Date().toISOString().slice(0, 10);
+        await API.recycleLeads.create({
+          company_name:   companyName,
+          contact_name:   deal?.contact_person || '',
+          lost_date:      today,
+          assigned_user:  deal?.assigned_user || '',
+          deal_id:        dealId,
+          recycle_status: '塩漬け',
+        });
+        await API.deals.update({ id: dealId, archived: true });
+        deal.archived = true;
+        updateCloseButtons(''); // ボタン非表示
+        Loading.hide();
+        showResultBanner('lost', null, false);
+      } catch(e) {
+        Loading.hide();
+        Toast.error('リサイクルリード登録エラー: ' + e.message);
+      }
+    }
+
+    // ===== 完了バナー =====
+    function showResultBanner(type, customerId, isExisting) {
+      const existing = document.getElementById('resultBanner');
       if (existing) existing.remove();
 
       const isWon = type === 'won';
-      const bg    = isWon ? '#f0fdf4' : '#f8fafc';
+      const bg     = isWon ? '#f0fdf4' : '#f8fafc';
       const border = isWon ? '#86efac' : '#cbd5e1';
-      const icon  = isWon ? '🎉' : '📋';
-      const title = isWon ? '受注おめでとうございます！' : '失注となりました';
-      const desc  = isWon
-        ? '顧客管理に登録して、CSフォローを開始しましょう。'
-        : 'リサイクルリードに移行して、再アプローチ時期を管理しましょう。';
-      const btnLabel = isWon ? '顧客に昇格する →' : 'リサイクルリードに移行する →';
-      const btnId    = isWon ? 'promoteCustomerBtn' : 'recycleLeadBtn';
+      const icon   = isWon ? '🎉' : '📋';
+      const title  = isWon
+        ? (isExisting ? '既存顧客に紐付けました' : '顧客登録が完了しました！')
+        : 'リサイクルリードに移行しました';
+      const desc   = isWon
+        ? '契約情報・CS担当を顧客詳細で入力してください'
+        : '失注理由・再アプローチ予定日をリサイクルリードで入力してください';
+      const link   = isWon
+        ? `<a href="/customers/detail.html?id=${customerId}" style="font-weight:700;color:var(--primary);">顧客詳細を開く →</a>`
+        : `<a href="/recycle-leads/index.html" style="font-weight:700;color:var(--primary);">リサイクルリード一覧 →</a>`;
 
       const banner = document.createElement('div');
-      banner.id = 'closePromptBanner';
+      banner.id = 'resultBanner';
       banner.style.cssText = `
         position:fixed;bottom:24px;right:24px;z-index:500;
         background:${bg};border:2px solid ${border};border-radius:12px;
-        padding:16px 20px;max-width:360px;box-shadow:0 4px 20px rgba(0,0,0,.15);
+        padding:16px 20px;max-width:340px;box-shadow:0 4px 20px rgba(0,0,0,.15);
         animation:slideIn .3s ease;
       `;
       banner.innerHTML = `
@@ -686,22 +748,19 @@
           <span style="font-size:24px;line-height:1;">${icon}</span>
           <div style="flex:1;">
             <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${title}</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">${desc}</div>
-            <div style="display:flex;gap:8px;">
-              <button onclick="document.getElementById('${btnId}').click();document.getElementById('closePromptBanner').remove();"
-                style="flex:1;padding:8px 12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">
-                ${btnLabel}
-              </button>
-              <button onclick="document.getElementById('closePromptBanner').remove();"
-                style="padding:8px 12px;background:transparent;border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;color:var(--text-muted);">
-                後で
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">${desc}</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div style="font-size:13px;">${link}</div>
+              <button onclick="document.getElementById('resultBanner').remove();"
+                style="padding:4px 10px;background:transparent;border:1px solid var(--border);border-radius:6px;font-size:11px;cursor:pointer;color:var(--text-muted);">
+                閉じる
               </button>
             </div>
           </div>
         </div>
       `;
       document.body.appendChild(banner);
-      setTimeout(() => { if (banner.parentNode) banner.remove(); }, 15000);
+      setTimeout(() => { if (banner.parentNode) banner.remove(); }, 20000);
     }
 
     // ===== クローズボタン表示制御 =====
