@@ -61,17 +61,24 @@
 
     <div class="page-body">
 
-      <!-- Filter Bar -->
-      <div class="filter-bar">
-        <input type="text" class="search-input" id="searchInput" placeholder="案件名・顧客名で検索">
-        <select class="form-select" id="phaseFilter" style="width:140px;">
-          <option value="">フェーズ: すべて</option>
-          <option>認知商談</option><option>ヒアリング</option><option>提案</option>
-          <option>クロージング</option><option>受注</option><option>失注</option>
-        </select>
-        <select class="form-select" id="userFilter" style="width:160px;">
-          <option value="">担当: すべて</option>
-        </select>
+      <!-- タブ -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px;">
+        <div class="tabs" style="margin-bottom:0;">
+          <button class="tab-btn active" id="tabActive" onclick="switchTab('active',this)">進行中</button>
+          <button class="tab-btn" id="tabClosed" onclick="switchTab('closed',this)">クローズ済み</button>
+        </div>
+        <!-- Filter Bar -->
+        <div class="filter-bar" style="margin-bottom:0;">
+          <input type="text" class="search-input" id="searchInput" placeholder="案件名・顧客名で検索">
+          <select class="form-select" id="phaseFilter" style="width:140px;">
+            <option value="">フェーズ: すべて</option>
+            <option>認知商談</option><option>ヒアリング</option><option>提案</option>
+            <option>クロージング</option>
+          </select>
+          <select class="form-select" id="userFilter" style="width:160px;">
+            <option value="">担当: すべて</option>
+          </select>
+        </div>
       </div>
 
       <!-- Kanban View -->
@@ -125,9 +132,11 @@
   <script src="/assets/js/api.js"></script>
   <script src="/assets/js/utils.js"></script>
   <script>
-    const PHASES = ['認知商談', 'ヒアリング', '提案', 'クロージング', '受注', '失注'];
+    const PHASES_ACTIVE = ['認知商談', 'ヒアリング', '提案', 'クロージング'];
+    const PHASES_CLOSED = ['受注', '失注'];
     let allDeals = [];
     let currentView = 'kanban';
+    let currentTab  = 'active'; // 'active' | 'closed'
 
     initPage(async () => {
       try {
@@ -139,6 +148,22 @@
       }
     });
 
+    // ===== タブ切り替え =====
+    function switchTab(tab, btn) {
+      currentTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      // クローズ済みタブではカンバン非対応なのでテーブルに切り替え
+      if (tab === 'closed' && currentView === 'kanban') {
+        currentView = 'table';
+        document.getElementById('viewKanban').classList.remove('active');
+        document.getElementById('viewList').classList.add('active');
+        document.getElementById('kanbanView').classList.add('hidden');
+        document.getElementById('tableView').classList.remove('hidden');
+      }
+      renderCurrentView();
+    }
+
     // ===== フィルター処理 =====
     function getFiltered() {
       const q     = document.getElementById('searchInput').value.trim().toLowerCase();
@@ -148,8 +173,17 @@
       return allDeals.filter(d => {
         const cname = d.company_name || '';
         if (q && !d.deal_name?.toLowerCase().includes(q) && !cname.toLowerCase().includes(q)) return false;
-        if (phase && d.phase !== phase) return false;
         if (user && d.assigned_user !== user) return false;
+        // タブによるフィルタ
+        if (currentTab === 'active') {
+          if (d.archived) return false;
+          if (PHASES_CLOSED.includes(d.phase)) return false;
+          if (phase && d.phase !== phase) return false;
+        } else {
+          // クローズ済みタブ: archived=true または受注/失注フェーズ
+          if (!d.archived && !PHASES_CLOSED.includes(d.phase)) return false;
+          if (phase && d.phase !== phase) return false;
+        }
         return true;
       });
     }
@@ -196,7 +230,7 @@
     function renderKanban() {
       const filtered = getFiltered();
       const wrap = document.getElementById('kanbanWrap');
-      wrap.innerHTML = PHASES.map(phase => {
+      wrap.innerHTML = PHASES_ACTIVE.map(phase => {
         const cards = filtered.filter(d => d.phase === phase);
         return `
           <div class="kanban-col">

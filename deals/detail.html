@@ -326,10 +326,20 @@
           Toast.success('案件を作成しました');
           location.href = `/deals/detail.html?id=${created.id}`;
         } else {
+          const prevPhase = deal?.phase;
           await API.deals.update({ id: dealId, ...data });
+          deal = { ...deal, ...data };
           Toast.success('保存しました');
           document.getElementById('phaseBadgeHeader').innerHTML = phaseBadge(data.phase);
           updateCloseButtons(data.phase);
+          // フェーズが受注・失注に変わった瞬間に自動でクローズ案内を表示
+          if (prevPhase !== data.phase) {
+            if (data.phase === '受注') {
+              setTimeout(() => showClosePrompt('won'), 600);
+            } else if (data.phase === '失注') {
+              setTimeout(() => showClosePrompt('lost'), 600);
+            }
+          }
         }
       } catch(e) {
         if (e.status === 409 && e.data?.duplicate) {
@@ -646,6 +656,54 @@
       catch(e) { Toast.error('エラー: ' + e.message); }
     }
 
+    // ===== フェーズ変更時の自動クローズ案内バナー =====
+    function showClosePrompt(type) {
+      const existing = document.getElementById('closePromptBanner');
+      if (existing) existing.remove();
+
+      const isWon = type === 'won';
+      const bg    = isWon ? '#f0fdf4' : '#f8fafc';
+      const border = isWon ? '#86efac' : '#cbd5e1';
+      const icon  = isWon ? '🎉' : '📋';
+      const title = isWon ? '受注おめでとうございます！' : '失注となりました';
+      const desc  = isWon
+        ? '顧客管理に登録して、CSフォローを開始しましょう。'
+        : 'リサイクルリードに移行して、再アプローチ時期を管理しましょう。';
+      const btnLabel = isWon ? '顧客に昇格する →' : 'リサイクルリードに移行する →';
+      const btnId    = isWon ? 'promoteCustomerBtn' : 'recycleLeadBtn';
+
+      const banner = document.createElement('div');
+      banner.id = 'closePromptBanner';
+      banner.style.cssText = `
+        position:fixed;bottom:24px;right:24px;z-index:500;
+        background:${bg};border:2px solid ${border};border-radius:12px;
+        padding:16px 20px;max-width:360px;box-shadow:0 4px 20px rgba(0,0,0,.15);
+        animation:slideIn .3s ease;
+      `;
+      banner.innerHTML = `
+        <style>@keyframes slideIn{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}</style>
+        <div style="display:flex;align-items:flex-start;gap:12px;">
+          <span style="font-size:24px;line-height:1;">${icon}</span>
+          <div style="flex:1;">
+            <div style="font-weight:700;font-size:14px;margin-bottom:4px;">${title}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">${desc}</div>
+            <div style="display:flex;gap:8px;">
+              <button onclick="document.getElementById('${btnId}').click();document.getElementById('closePromptBanner').remove();"
+                style="flex:1;padding:8px 12px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">
+                ${btnLabel}
+              </button>
+              <button onclick="document.getElementById('closePromptBanner').remove();"
+                style="padding:8px 12px;background:transparent;border:1px solid var(--border);border-radius:8px;font-size:12px;cursor:pointer;color:var(--text-muted);">
+                後で
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(banner);
+      setTimeout(() => { if (banner.parentNode) banner.remove(); }, 15000);
+    }
+
     // ===== クローズボタン表示制御 =====
     function updateCloseButtons(phase) {
       document.getElementById('promoteCustomerBtn').style.display  = phase === '受注' ? 'inline-flex' : 'none';
@@ -707,7 +765,7 @@
           onboarding_status: '未開始',
           ma_subscribed:     'false',
         });
-        await API.deals.update({ id: dealId, customer_id: newCustomer.id });
+        await API.deals.update({ id: dealId, customer_id: newCustomer.id, archived: true });
         document.getElementById('promoteModal').remove();
         Toast.success('顧客に昇格しました！');
         setTimeout(() => { location.href = `/customers/detail.html?id=${newCustomer.id}`; }, 1200);
@@ -800,6 +858,7 @@
           memo,
           recycle_status:     '塩漬け',
         });
+        await API.deals.update({ id: dealId, archived: true });
         document.getElementById('recycleModal').remove();
         Toast.success('リサイクルリードに移行しました');
         setTimeout(() => { location.href = '/recycle-leads/index.html'; }, 1200);

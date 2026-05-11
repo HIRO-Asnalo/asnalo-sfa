@@ -449,19 +449,32 @@
             </div>
           </div>
 
-          <!-- 案件登録ボタン -->
-          <div style="margin-top:16px;text-align:center;">
-            <button class="btn btn-primary" id="registerBtn" onclick="registerDeal()" style="padding:12px 36px;font-size:14px;">
-              <svg viewBox="0 0 24 24" style="width:15px;height:15px;margin-right:6px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-              この企業を案件として登録
-            </button>
-            <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">リサーチ内容・課題・推奨プランが自動入力されます</div>
+          <!-- 登録ボタン群 -->
+          <div style="margin-top:16px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+            <div style="text-align:center;">
+              <button class="btn btn-primary" id="registerBtn" onclick="registerDeal()" style="padding:12px 28px;font-size:14px;">
+                <svg viewBox="0 0 24 24" style="width:15px;height:15px;margin-right:6px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                案件として登録
+              </button>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">リサーチ内容が自動入力</div>
+            </div>
+            <div style="text-align:center;">
+              <button class="btn btn-ghost" id="addLeadBtn" onclick="addToLeads()" style="padding:12px 28px;font-size:14px;border:2px solid var(--primary);">
+                <svg viewBox="0 0 24 24" style="width:15px;height:15px;margin-right:6px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+                リードに追加
+              </button>
+              <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">アタックリストへ追加</div>
+            </div>
           </div>
 
           <!-- 登録完了トースト -->
-          <div id="registerToast" style="display:none;margin-top:12px;background:#dcfce7;border:1px solid #86efac;border-radius:8px;padding:14px 18px;display:none;align-items:center;gap:12px;">
+          <div id="registerToast" style="display:none;margin-top:12px;background:#dcfce7;border:1px solid #86efac;border-radius:8px;padding:14px 18px;align-items:center;gap:12px;">
             <span style="color:#16a34a;font-weight:700;">✅ 案件登録完了</span>
             <a id="dealLink" href="#" style="color:var(--primary);font-weight:600;font-size:13px;">案件詳細を開く →</a>
+          </div>
+          <div id="leadToast" style="display:none;margin-top:12px;background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px 18px;align-items:center;gap:12px;">
+            <span style="color:#1d4ed8;font-weight:700;">✅ リードに追加しました</span>
+            <a href="/leads/index.html" style="color:var(--primary);font-weight:600;font-size:13px;">リード一覧を開く →</a>
           </div>
 
         </div><!-- /results -->
@@ -659,6 +672,32 @@
         alert('登録に失敗しました: ' + e.message);
         btn.disabled = false;
         btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:15px;height:15px;margin-right:6px;"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>この企業を案件として登録';
+      }
+    }
+
+    // ===== リードに追加 =====
+    async function addToLeads() {
+      if (!_lastResult) return;
+      const btn = document.getElementById('addLeadBtn');
+      btn.disabled = true;
+      btn.textContent = '追加中…';
+      try {
+        const r = _lastResult.research;
+        await API.leads.create({
+          company_name:   _lastResult.company_name,
+          industry:       r.industry || '',
+          employee_count: r.employee_count || '',
+          score:          r.icp_score || null,
+          source:         '新規開拓リサーチ',
+          status:         '未対応',
+          memo:           `ICPスコア: ${r.icp_score}点（${r.icp_judgment}）\n推奨: ${r.recommended_service || ''}\n採用シグナル: ${(r.signals || []).join(', ')}`,
+        });
+        document.getElementById('leadToast').style.display = 'flex';
+        btn.textContent = 'リード追加済み ✅';
+      } catch(e) {
+        alert('リード追加に失敗しました: ' + e.message);
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 24 24" style="width:15px;height:15px;margin-right:6px;stroke:currentColor;fill:none;stroke-width:2;"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>リードに追加';
       }
     }
 
