@@ -43,6 +43,8 @@
         <button class="btn btn-ghost btn-sm" id="aiProposalBtn" style="display:none;">🤖 提案を生成</button>
         <button class="btn btn-ghost btn-sm" id="aiActionBtn" style="display:none;">🤖 アクション提案</button>
         <button class="btn btn-danger btn-sm" id="deleteBtn" style="display:none;">削除</button>
+        <button class="btn btn-sm" id="promoteCustomerBtn" style="display:none;background:#16a34a;color:#fff;border:none;">顧客に昇格</button>
+        <button class="btn btn-sm" id="recycleLeadBtn" style="display:none;background:#6b7280;color:#fff;border:none;">リサイクルリードに移行</button>
         <button class="btn btn-primary" id="saveBtn">保存</button>
       </div>
     </div>
@@ -204,6 +206,7 @@
           document.getElementById('deleteBtn').style.display = 'inline-flex';
           document.getElementById('aiProposalBtn').style.display = 'inline-flex';
           document.getElementById('aiActionBtn').style.display = 'inline-flex';
+          updateCloseButtons(deal.phase);
           document.getElementById('deal_company_name').value = deal.company_name || '';
           if (deal.expected_amount != null) document.getElementById('deal_expected_amount').value = deal.expected_amount;
           if (deal.customer_id) custSel.value = deal.customer_id;
@@ -326,6 +329,7 @@
           await API.deals.update({ id: dealId, ...data });
           Toast.success('保存しました');
           document.getElementById('phaseBadgeHeader').innerHTML = phaseBadge(data.phase);
+          updateCloseButtons(data.phase);
         }
       } catch(e) {
         if (e.status === 409 && e.data?.duplicate) {
@@ -640,6 +644,168 @@
       if (!await showConfirm('このファイルを削除しますか？', '削除する', 'btn-danger')) return;
       try { await API.documents.delete(id); loadDealFiles(); Toast.success('削除しました'); }
       catch(e) { Toast.error('エラー: ' + e.message); }
+    }
+
+    // ===== クローズボタン表示制御 =====
+    function updateCloseButtons(phase) {
+      document.getElementById('promoteCustomerBtn').style.display  = phase === '受注' ? 'inline-flex' : 'none';
+      document.getElementById('recycleLeadBtn').style.display      = phase === '失注' ? 'inline-flex' : 'none';
+    }
+
+    // ===== 受注 → 顧客に昇格 =====
+    document.getElementById('promoteCustomerBtn').addEventListener('click', () => {
+      const companyName = document.getElementById('deal_company_name')?.value || deal?.company_name || '';
+      const modal = document.createElement('div');
+      modal.id = 'promoteModal';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;';
+      modal.innerHTML = `
+        <div style="background:#fff;border-radius:12px;padding:28px;width:460px;max-width:95vw;">
+          <h2 style="font-size:16px;font-weight:700;margin-bottom:4px;">顧客に昇格</h2>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:20px;">「${companyName}」を顧客管理に登録します</p>
+          <div style="display:grid;gap:12px;">
+            <div>
+              <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">契約種別</label>
+              <select id="pm_contract_type" class="form-select">
+                <option value="">選択</option>
+                <option>フルサポ採用</option>
+                <option>CLUTCH Agent</option>
+                <option>その他</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">契約日</label>
+              <input type="date" id="pm_contract_date" class="form-input" value="${new Date().toISOString().slice(0,10)}">
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">CS担当</label>
+              <input type="text" id="pm_cs_rep" class="form-input" placeholder="担当者名">
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+            <button class="btn btn-ghost" onclick="document.getElementById('promoteModal').remove()">キャンセル</button>
+            <button class="btn btn-sm" style="background:#16a34a;color:#fff;border:none;" onclick="execPromoteCustomer()">顧客として登録</button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+      modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    });
+
+    async function execPromoteCustomer() {
+      const companyName = document.getElementById('deal_company_name')?.value || deal?.company_name || '';
+      const contractType = document.getElementById('pm_contract_type').value;
+      const contractDate = document.getElementById('pm_contract_date').value;
+      const csRep        = document.getElementById('pm_cs_rep').value;
+      Loading.show();
+      try {
+        const newCustomer = await API.customers.create({
+          company_name:      companyName,
+          contact_name:      deal?.contact_person || '',
+          contract_type:     contractType,
+          contract_date:     contractDate,
+          cs_rep:            csRep,
+          cs_status:         'オンボーディング中',
+          onboarding_status: '未開始',
+          ma_subscribed:     'false',
+        });
+        await API.deals.update({ id: dealId, customer_id: newCustomer.id });
+        document.getElementById('promoteModal').remove();
+        Toast.success('顧客に昇格しました！');
+        setTimeout(() => { location.href = `/customers/detail.html?id=${newCustomer.id}`; }, 1200);
+      } catch(e) {
+        if (e.status === 409 && e.data?.duplicate) {
+          Loading.hide();
+          const go = confirm(`⚠️ ${e.data.error}\n\nそれでも新規登録しますか？`);
+          if (go) {
+            Loading.show();
+            try {
+              const nc = await API.customers.create({
+                company_name: companyName, contract_type: contractType,
+                contract_date: contractDate, cs_rep: csRep,
+                cs_status: 'オンボーディング中', onboarding_status: '未開始',
+                ma_subscribed: 'false', force: true,
+              });
+              await API.deals.update({ id: dealId, customer_id: nc.id });
+              document.getElementById('promoteModal').remove();
+              Toast.success('顧客に昇格しました！');
+              setTimeout(() => { location.href = `/customers/detail.html?id=${nc.id}`; }, 1200);
+            } catch(e2) { Toast.error('エラー: ' + e2.message); }
+          }
+          return;
+        }
+        Toast.error('エラー: ' + e.message);
+      } finally { Loading.hide(); }
+    }
+
+    // ===== 失注 → リサイクルリードに移行 =====
+    document.getElementById('recycleLeadBtn').addEventListener('click', () => {
+      const companyName = document.getElementById('deal_company_name')?.value || deal?.company_name || '';
+      const modal = document.createElement('div');
+      modal.id = 'recycleModal';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;';
+      modal.innerHTML = `
+        <div style="background:#fff;border-radius:12px;padding:28px;width:460px;max-width:95vw;">
+          <h2 style="font-size:16px;font-weight:700;margin-bottom:4px;">リサイクルリードに移行</h2>
+          <p style="font-size:12px;color:var(--text-muted);margin-bottom:20px;">「${companyName}」を再アプローチリストに登録します</p>
+          <div style="display:grid;gap:12px;">
+            <div>
+              <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">失注理由</label>
+              <select id="rl_lost_reason" class="form-select">
+                <option value="">選択</option>
+                <option>予算不足</option>
+                <option>タイミング合わず</option>
+                <option>競合他社に決定</option>
+                <option>採用中断</option>
+                <option>内製化</option>
+                <option>その他</option>
+              </select>
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">失注日</label>
+              <input type="date" id="rl_lost_date" class="form-input" value="${new Date().toISOString().slice(0,10)}">
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">再アプローチ予定日</label>
+              <input type="date" id="rl_next_approach" class="form-input">
+            </div>
+            <div>
+              <label style="font-size:12px;font-weight:600;display:block;margin-bottom:4px;">メモ</label>
+              <textarea id="rl_memo" class="form-input" rows="2" placeholder="失注の背景・次回へのヒント" style="resize:vertical;"></textarea>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:20px;">
+            <button class="btn btn-ghost" onclick="document.getElementById('recycleModal').remove()">キャンセル</button>
+            <button class="btn btn-sm" style="background:#6b7280;color:#fff;border:none;" onclick="execRecycleLead()">移行する</button>
+          </div>
+        </div>`;
+      document.body.appendChild(modal);
+      modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+    });
+
+    async function execRecycleLead() {
+      const companyName   = document.getElementById('deal_company_name')?.value || deal?.company_name || '';
+      const lostReason    = document.getElementById('rl_lost_reason').value;
+      const lostDate      = document.getElementById('rl_lost_date').value;
+      const nextApproach  = document.getElementById('rl_next_approach').value;
+      const memo          = document.getElementById('rl_memo').value;
+      Loading.show();
+      try {
+        await API.recycleLeads.create({
+          company_name:       companyName,
+          contact_name:       deal?.contact_person || '',
+          lost_reason:        lostReason,
+          lost_date:          lostDate || null,
+          next_approach_date: nextApproach || null,
+          assigned_user:      deal?.assigned_user || '',
+          deal_id:            dealId,
+          memo,
+          recycle_status:     '塩漬け',
+        });
+        document.getElementById('recycleModal').remove();
+        Toast.success('リサイクルリードに移行しました');
+        setTimeout(() => { location.href = '/recycle-leads/index.html'; }, 1200);
+      } catch(e) {
+        Toast.error('エラー: ' + e.message);
+      } finally { Loading.hide(); }
     }
   </script>
 </body>
